@@ -150,31 +150,23 @@ F 3 "" H 3900 2600 50  0001 C CNN
 	-1   0    0    -1  
 $EndComp
 Text GLabel 4950 4000 1    50   Input ~ 0
-IA2
+I2
 Text GLabel 5050 4000 1    50   Input ~ 0
-IA1
+I1
 Text GLabel 4850 4000 1    50   Input ~ 0
-ENA
-Text GLabel 5050 2600 3    50   Input ~ 0
+EN
+Text GLabel 4950 2600 3    50   Input ~ 0
 hall1
-Text GLabel 5150 2600 3    50   Input ~ 0
+Text GLabel 5050 2600 3    50   Input ~ 0
 hall2
-Text GLabel 5250 2600 3    50   Input ~ 0
+Text GLabel 5150 2600 3    50   Input ~ 0
 hall3
-Text GLabel 5500 2600 3    50   Input ~ 0
-hall4
-Text GLabel 5600 2600 3    50   Input ~ 0
-hall5
 Text GLabel 5250 4000 1    50   Input ~ 0
 hall1
 Text GLabel 5350 4000 1    50   Input ~ 0
 hall2
 Text GLabel 5450 4000 1    50   Input ~ 0
 hall3
-Text GLabel 5550 4000 1    50   Input ~ 0
-hall4
-Text GLabel 5650 4000 1    50   Input ~ 0
-hall5
 $Comp
 L Device:CP C2
 U 1 1 639AE459
@@ -290,11 +282,11 @@ OA1
 Text GLabel 7500 4800 3    50   Input ~ 0
 OA2
 Text GLabel 7600 4800 3    50   Input ~ 0
-IA2
+I2
 Text GLabel 7100 4800 3    50   Input ~ 0
-IA1
+I1
 Text GLabel 7000 4800 3    50   Input ~ 0
-ENA
+EN
 $Comp
 L power:GND #PWR017
 U 1 1 638F1E09
@@ -305,17 +297,6 @@ F 2 "" H 6800 5100 50  0001 C CNN
 F 3 "" H 6800 5100 50  0001 C CNN
 	1    6800 5100
 	1    0    0    -1  
-$EndComp
-$Comp
-L power:GND #PWR019
-U 1 1 638F3B06
-P 7700 4050
-F 0 "#PWR019" H 7700 3800 50  0001 C CNN
-F 1 "GND" V 7700 3850 50  0000 C CNN
-F 2 "" H 7700 4050 50  0001 C CNN
-F 3 "" H 7700 4050 50  0001 C CNN
-	1    7700 4050
-	-1   0    0    1   
 $EndComp
 Text GLabel 4150 2600 3    50   Input ~ 0
 OA1
@@ -381,56 +362,23 @@ SW
 $Comp
 L power:GND #PWR03
 U 1 1 6385831D
-P 4950 2600
-F 0 "#PWR03" H 4950 2350 50  0001 C CNN
-F 1 "GND" V 4950 2400 50  0000 C CNN
-F 2 "" H 4950 2600 50  0001 C CNN
-F 3 "" H 4950 2600 50  0001 C CNN
-	1    4950 2600
+P 4850 2600
+F 0 "#PWR03" H 4850 2350 50  0001 C CNN
+F 1 "GND" V 4850 2400 50  0000 C CNN
+F 2 "" H 4850 2600 50  0001 C CNN
+F 3 "" H 4850 2600 50  0001 C CNN
+	1    4850 2600
 	1    0    0    -1  
 $EndComp
 $Comp
 L power:+3.3V #PWR04
 U 1 1 63858323
-P 4850 2600
-F 0 "#PWR04" H 4850 2450 50  0001 C CNN
-F 1 "+3.3V" V 4850 2850 50  0000 C CNN
-F 2 "" H 4850 2600 50  0001 C CNN
-F 3 "" H 4850 2600 50  0001 C CNN
-	1    4850 2600
-	-1   0    0    1   
-$EndComp
-$Comp
-L Connector_Generic:Conn_01x04 J5
-U 1 1 6385F1AB
-P 5600 2400
-F 0 "J5" V 5800 2400 50  0000 R CNN
-F 1 "halls2" V 5700 2450 50  0000 R CNN
-F 2 "cnc3018-PCB:my4pin" H 5600 2400 50  0001 C CNN
-F 3 "~" H 5600 2400 50  0001 C CNN
-	1    5600 2400
-	0    -1   -1   0   
-$EndComp
-$Comp
-L power:GND #PWR05
-U 1 1 63867962
-P 5700 2600
-F 0 "#PWR05" H 5700 2350 50  0001 C CNN
-F 1 "GND" V 5700 2400 50  0000 C CNN
-F 2 "" H 5700 2600 50  0001 C CNN
-F 3 "" H 5700 2600 50  0001 C CNN
-	1    5700 2600
-	1    0    0    -1  
-$EndComp
-$Comp
-L power:+3.3V #PWR06
-U 1 1 63867968
-P 5800 2600
-F 0 "#PWR06" H 5800 2450 50  0001 C CNN
-F 1 "+3.3V" V 5800 2850 50  0000 C CNN
-F 2 "" H 5800 2600 50  0001 C CNN
-F 3 "" H 5800 2600 50  0001 C CNN
-	1    5800 2600
+P 5250 2600
+F 0 "#PWR04" H 5250 2450 50  0001 C CNN
+F 1 "+3.3V" V 5250 2850 50  0000 C CNN
+F 2 "" H 5250 2600 50  0001 C CNN
+F 3 "" H 5250 2600 50  0001 C CNN
+	1    5250 2600
 	-1   0    0    1   
 $EndComp
 $Comp
@@ -449,9 +397,9 @@ OA2
 Wire Wire Line
 	6800 4800 7000 4800
 Text GLabel 4600 2600 3    50   Input ~ 0
-OA2
+OB2
 Text GLabel 4500 2600 3    50   Input ~ 0
-OA1
+OB1
 $Comp
 L Connector_Generic:Conn_01x02 J3
 U 1 1 6387F0FB
@@ -474,4 +422,14 @@ F 3 "~" H 4150 2400 50  0001 C CNN
 	1    4150 2400
 	0    -1   -1   0   
 $EndComp
+Text GLabel 7200 4050 1    50   Input ~ 0
+OB1
+Text GLabel 7100 4050 1    50   Input ~ 0
+I1
+Text GLabel 7600 4050 1    50   Input ~ 0
+I2
+Text GLabel 7500 4050 1    50   Input ~ 0
+OB2
+Text GLabel 7700 4050 1    50   Input ~ 0
+EN
 $EndSCHEMATC
