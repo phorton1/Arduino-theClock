@@ -41,8 +41,12 @@ const int hall_pins[NUM_HALL_PINS] =
 static int circ_ptr = 0;
 static int circ_buf[NUM_HALL_PINS][NUM_SAMPLES];
 static int hall_value[NUM_HALL_PINS];
-static int hall_zero[NUM_HALL_PINS] = {1734,1876,1867};	// ,1781,1840};
 
+#if COMPILE_VERSION == 2
+	static int hall_zero[NUM_HALL_PINS] = {1795,1876,1836};
+#else
+	static int hall_zero[NUM_HALL_PINS] = {1734,1876,1867};
+#endif
 
 //----------------------------
 // motors
@@ -113,7 +117,7 @@ static int32_t high_dur     = 0;
 		// assuming pendulum is hanging down
 		// set zero for sensors 0 and 1
 
-		display(0,"calibrating hall pins - pendulum must be stopped, center",0);
+		Serial.println("calibrating hall pins - pendulum must be stopped, center");
 		delay(500);
 		for (int i=0; i<NUM_HALL_PINS; i++)
 		{
@@ -124,16 +128,18 @@ static int32_t high_dur     = 0;
 
 		// then set the central sensor
 
-		display(0,"move pendulum to one side and press any key",0);
+		Serial.println("move pendulum to one side and press any key");
 		while (!Serial.available()) { delay(5); }
 		int c = Serial.read();
 		delay(100);
 		hall_zero[2] = analogRead(hall_pins[1]);
 		delay(500);
-		display(0,"hall calibration complete %d,%d,%d",	// ,%d,%d",
-			hall_zero[0],
-			hall_zero[1],
-			hall_zero[2]);
+		Serial.print("hall_calibration complete ");
+		Serial.print(hall_zero[0]);
+		Serial.print(",");
+		Serial.print(hall_zero[1]);
+		Serial.print(",");
+		Serial.println(hall_zero[2]);
 			//hall_zero[3],
 			//hall_zero[4]);
 	}
@@ -146,8 +152,6 @@ static int32_t high_dur     = 0;
 void theClock::setup()	// override
 {
 	LOGU("theClock::setup() started");
-
-	myIOTDevice::setup();
 
 	pixels.setPixelColor(0,MY_LED_RED);
 	pixels.show();
@@ -172,6 +176,10 @@ void theClock::setup()	// override
 	digitalWrite(PIN_INA2,0);
 	digitalWrite(PIN_INB1,0);
 	digitalWrite(PIN_INB2,0);
+
+	// one_time_calibrate_hall();
+
+	myIOTDevice::setup();
 
 	pixels.setPixelColor(0,MY_LED_GREEN);
 	pixels.show();

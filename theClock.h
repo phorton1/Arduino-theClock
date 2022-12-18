@@ -3,6 +3,8 @@
 #include <Arduino.h>
 #include <myIOTDevice.h>
 
+#define COMPILE_VERSION  2
+
 #define PIN_HALL1	32
 #define PIN_HALL2	35
 #define PIN_HALL3	34

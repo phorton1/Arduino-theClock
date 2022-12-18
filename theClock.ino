@@ -9,8 +9,8 @@
 // theClock definition
 //------------------------
 
-#define THE_CLOCK             "theClock"
-#define THE_CLOCK_VERSION     "1.0"
+#define THE_CLOCK             "theClock2"
+#define THE_CLOCK_VERSION     "2.0"
 
 #define DEFAULT_POWER_LOW		100
 #define DEFAULT_POWER_HIGH		180
