@@ -27,13 +27,25 @@
 #define PIN_LEDS	22
 #define PIN_BUTTON  18
 
-#define PIXEL_MODEL		0
-#define PIXEL_MODER		1
-#define PIXEL_DUR		2
-#define PIXEL_ERROR     3
-#define PIXEL_LEFT      4
-#define PIXEL_RIGHT     5
-#define NUM_PIXELS		6
+
+#define WITH_DIAG_PIXELS   0
+	// if WITH_DIAG_PIXELS, it shows 6 pixels with various info
+	// if not, it shows one pixel, for production models
+
+
+#if WITH_DIAG_PIXELS
+	#define PIXEL_MODEL		0
+	#define PIXEL_MODER		1
+	#define PIXEL_DUR		2
+	#define PIXEL_ERROR     3
+	#define PIXEL_LEFT      4
+	#define PIXEL_RIGHT     5
+	#define NUM_PIXELS		6			// diagnostic version
+#else
+	#define NUM_PIXELS		1			// diagnostic version
+	#define PIXEL_MAIN		0
+#endif
+
 
 #define MY_LED_BLACK    0x000000
 #define MY_LED_RED      0x440000
@@ -42,8 +54,12 @@
 #define MY_LED_CYAN     0x003333
 #define MY_LED_YELLOW   0x333300
 #define MY_LED_MAGENTA  0x330033
+
 #define MY_LED_WHITE    0x444444
 
+#define MY_LED_ORANGE   0x402200
+#define MY_LED_REDMAG   0x400022
+#define MY_LED_BLUECYAN 0x002240
 
 
 //------------------------
@@ -52,6 +68,7 @@
 
 #define ID_RUNNING			"RUNNING"
 #define ID_PID_MODE			"PID_MODE"
+#define ID_PLOT_VALUES		"PLOT_VALUES"
 
 #define ID_POWER_LOW      	"POWER_LOW"         // overrides PID controller if pendulum goes too far right (too far left uses zero!!)
 #define ID_POWER_HIGH      	"POWER_HIGH"        // overriden by PID ...  Used with left and right durations in normal swing from -3 to 3
@@ -99,6 +116,7 @@ private:
 
 	static bool _clock_running;
 	static bool _pid_mode;
+	static uint32_t _plot_values;
 
 	static int _power_low;		// used when reaches extremes; bypasses PID
 	static int _power_high;		// used when reaches normal and !PID (pid takes it over)

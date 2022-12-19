@@ -30,7 +30,7 @@
 static valueIdType dash_items[] = {
 	ID_RUNNING,
 	ID_PID_MODE,
-    ID_REBOOT,
+	ID_PLOT_VALUES,
 
 	ID_CLEAR_STATS,
 	ID_CUR_TIME,
@@ -67,6 +67,14 @@ static valueIdType device_items[] = {
 };
 
 
+static enumValue plotAllowed[] = {
+    "Off",
+    "On",
+    "Pause",
+    0};
+
+
+
 // value descriptors for testDevice
 
 
@@ -78,6 +86,7 @@ const valDescriptor theClock::m_clock_values[] =
 
 	{ ID_RUNNING,      		VALUE_TYPE_BOOL,     VALUE_STORE_PREF,     VALUE_STYLE_NONE,       (void *) &_clock_running,(void *) onClockRunningChanged, },
 	{ ID_PID_MODE,      	VALUE_TYPE_BOOL,     VALUE_STORE_PREF,     VALUE_STYLE_NONE,       (void *) &_pid_mode, 	(void *) onPIDModeChanged, },
+	{ ID_PLOT_VALUES,      	VALUE_TYPE_ENUM,     VALUE_STORE_PUB,      VALUE_STYLE_NONE,       (void *) &_plot_values, 	NULL,  { .enum_range = { 0, plotAllowed }} },
 
 	{ ID_POWER_LOW,  		VALUE_TYPE_INT,      VALUE_STORE_PREF,     VALUE_STYLE_NONE,       (void *) &_power_low,	NULL,  { .int_range = { DEFAULT_POWER_LOW,  	0,  255}} },
 	{ ID_POWER_HIGH,  		VALUE_TYPE_INT,      VALUE_STORE_PREF,     VALUE_STYLE_NONE,       (void *) &_power_high,	NULL,  { .int_range = { DEFAULT_POWER_HIGH,   	0,  255}} },
@@ -116,6 +125,7 @@ const valDescriptor theClock::m_clock_values[] =
 
 bool 	theClock::_clock_running = 1;
 bool 	theClock::_pid_mode = 1;
+uint32_t theClock::_plot_values = 0;
 
 int  	theClock::_power_low;
 int  	theClock::_power_high;

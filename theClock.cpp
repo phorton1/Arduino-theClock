@@ -77,8 +77,6 @@ void setPixel(int num, uint32_t color)
 // vars
 //--------------------------------------------
 
-static bool plot_values   	= 0;
-
 // Basics
 
 static bool clock_started = 0;
@@ -179,16 +177,14 @@ void theClock::setup()	// override
 
 	// one_time_calibrate_hall();
 
+	pixels.setPixelColor(0,MY_LED_YELLOW);
+	pixels.show();
 	myIOTDevice::setup();
 
 	pixels.setPixelColor(0,MY_LED_GREEN);
 	pixels.show();
-	delay(500);
-	pixels.setPixelColor(0,MY_LED_BLACK);
-	pixels.show();
 
 	save_high_power = _power_high;
-
 	#if CLOCK_USE_TASK
 	    LOGI("starting clockTask");
 		xTaskCreatePinnedToCore(clockTask,
@@ -204,6 +200,8 @@ void theClock::setup()	// override
 		startClock();
 
 	LOGU("theClock::setup() finished");
+	pixels.setPixelColor(0,MY_LED_BLACK);
+	pixels.show();
 
 }	// theClock::setup()
 
@@ -421,23 +419,27 @@ void theClock::run()
 	{
 		max_left = position;
 
-		if (max_left == -4)
-			setPixel(PIXEL_LEFT,MY_LED_MAGENTA);
-		else if (max_left == -3)
-			setPixel(PIXEL_LEFT,MY_LED_GREEN);
-		else
-			setPixel(PIXEL_LEFT,MY_LED_RED);
+		#if WITH_DIAG_PIXELS
+			if (max_left == -4)
+				setPixel(PIXEL_LEFT,MY_LED_MAGENTA);
+			else if (max_left == -3)
+				setPixel(PIXEL_LEFT,MY_LED_GREEN);
+			else
+				setPixel(PIXEL_LEFT,MY_LED_RED);
+		#endif
 	}
 	if (position > 0 && position > max_right)
 	{
 		max_right = position;
 
-		if (max_right == 4)
-			setPixel(PIXEL_RIGHT,MY_LED_MAGENTA);
-		else if (max_right == 3)
-			setPixel(PIXEL_RIGHT,MY_LED_GREEN);
-		else
-			setPixel(PIXEL_RIGHT,MY_LED_RED);
+		#if WITH_DIAG_PIXELS
+			if (max_right == 4)
+				setPixel(PIXEL_RIGHT,MY_LED_MAGENTA);
+			else if (max_right == 3)
+				setPixel(PIXEL_RIGHT,MY_LED_GREEN);
+			else
+				setPixel(PIXEL_RIGHT,MY_LED_RED);
+		#endif
 	}
 
 
@@ -461,6 +463,9 @@ void theClock::run()
 		last_change = now;
 		num_restarts++;
 		LOGE("CLOCK STOPPED! - restarting!!");
+		#if WITH_DIAG_PIXELS == 0
+			setPixel(PIXEL_MAIN, MY_LED_WHITE);
+		#endif
 		motor(-1,POWER_MAX);
 		delay(200);
 		motor(0,0);
@@ -492,21 +497,30 @@ void theClock::run()
 			if (cycle_duration > high_dur)
 				high_dur = cycle_duration;
 
-			if (!plot_values)
+			if (!_plot_values)
 				LOGU("dur=%-4d  error=%-4d  power=%d",cycle_duration,total_error,_power_high);
 
-			setPixel(PIXEL_DUR,
-				cycle_duration < 998 ? MY_LED_RED :
-				cycle_duration > 1001 ? MY_LED_BLUE :
-				MY_LED_GREEN);
-
-			setPixel(PIXEL_ERROR,
-				total_error < -2000 ? MY_LED_RED :
-				total_error < -200 ? MY_LED_MAGENTA :
-				total_error > 2000 ? MY_LED_BLUE :
-				total_error > 200 ? MY_LED_CYAN :
-				MY_LED_GREEN);
-
+			#if WITH_DIAG_PIXELS
+				setPixel(PIXEL_DUR,
+					cycle_duration < 998 ? MY_LED_RED :
+					cycle_duration > 1001 ? MY_LED_BLUE :
+					MY_LED_GREEN);
+				setPixel(PIXEL_ERROR,
+					total_error < -2000 ? MY_LED_RED :
+					total_error < -200 ? MY_LED_MAGENTA :
+					total_error > 2000 ? MY_LED_BLUE :
+					total_error > 200 ? MY_LED_CYAN :
+					MY_LED_GREEN);
+			#else
+				setPixel(PIXEL_MAIN,
+					total_error > 2000 ? MY_LED_BLUE :
+					total_error < -2000 ? MY_LED_RED :
+					total_error > 200 ? MY_LED_BLUECYAN :
+					total_error < -200 ? MY_LED_ORANGE :
+					cycle_duration < 995 ?  MY_LED_YELLOW :
+					cycle_duration > 1005 ? MY_LED_CYAN :
+					MY_LED_GREEN);
+			#endif
 
 			if (_pid_mode)
 			{
@@ -531,7 +545,8 @@ void theClock::run()
 				if (new_power > POWER_MAX) new_power = POWER_MAX;
 				if (new_power  < _power_low) new_power = _power_low;
 
-				LOGI("power=%d myPID(%f,%f,%f) factor=%f  new=%f",_power_high,this_p,this_i,this_d,factor,new_power);
+				if (!_plot_values)
+					LOGI("power=%d myPID(%f,%f,%f) factor=%f  new=%f",_power_high,this_p,this_i,this_d,factor,new_power);
 				_power_high = new_power;
 
 			}	// pid_mode
@@ -542,24 +557,38 @@ void theClock::run()
 			{
 				int use_power = 0;
 				int use_dur = 0;
+
+				// if (_pid_mode)
+				// {
+				// 	use_power = _power_high;
+				// 	use_dur = _dur_right;
+				// }
+				// else
+
 				if (max_right > 3)			// right went too far. use power_low (bypasses pid controller using power_low)
 				{
 					use_power = _power_low;
 					use_dur = _dur_right;
-					setPixel(PIXEL_MODER,MY_LED_BLUE);
+					#if WITH_DIAG_PIXELS
+						setPixel(PIXEL_MODER,MY_LED_BLUE);
+					#endif
 					num_over_right++;
 				}
 				else if (max_right == 3)	// normal, use power_high (PID) and constant dur_right
 				{
 					use_power = _power_high;
 					use_dur = _dur_right;
-					setPixel(PIXEL_MODER,MY_LED_GREEN);
+					#if WITH_DIAG_PIXELS
+						setPixel(PIXEL_MODER,MY_LED_GREEN);
+					#endif
 				}
 				else						// emergency - right stalled!
 				{
 					use_power = POWER_MAX;
 					use_dur = max_right == 2 ? _dur_stall : _dur_start;
-					setPixel(PIXEL_MODER,MY_LED_RED);
+					#if WITH_DIAG_PIXELS
+						setPixel(PIXEL_MODER,MY_LED_RED);
+					#endif
 					LOGE("STALL_RIGHT",0);
 					num_stalls_right++;
 				}
@@ -583,11 +612,20 @@ void theClock::run()
 				int use_power = 0;
 				int use_dur = 0;
 
+				// if (_pid_mode)
+				// {
+				// 	use_power = _power_high;
+				// 	use_dur = _dur_left;
+				// }
+				// else
+
 				if (max_left < -3)			// left went to far, NO PULSE
 				{
 					use_power = 0;
 					use_dur = 0;
-					setPixel(PIXEL_MODEL,MY_LED_BLUE);
+					#if WITH_DIAG_PIXELS
+						setPixel(PIXEL_MODEL,MY_LED_BLUE);
+					#endif
 					num_over_left++;
 				}
 
@@ -599,7 +637,9 @@ void theClock::run()
 				{
 					use_power = _power_high;
 					use_dur = _dur_left;
-					setPixel(PIXEL_MODEL,MY_LED_GREEN);
+					#if WITH_DIAG_PIXELS
+						setPixel(PIXEL_MODEL,MY_LED_GREEN);
+					#endif
 				}
 
 				// emergency - left is stalled!
@@ -608,7 +648,9 @@ void theClock::run()
 				{
 					use_power = POWER_MAX;
 					use_dur = max_left == -2 ? _dur_stall : _dur_start;
-					setPixel(PIXEL_MODEL,MY_LED_RED);
+					#if WITH_DIAG_PIXELS
+						setPixel(PIXEL_MODEL,MY_LED_RED);
+					#endif
 					LOGE("STALL_LEFT",0);
 					num_stalls_left++;
 				}
@@ -638,14 +680,16 @@ void theClock::run()
 		motor_start = 0;
 		motor_dur = 0;
 		motor(0,0);
-		setPixel(PIXEL_MODEL,MY_LED_BLACK);
-		setPixel(PIXEL_MODER,MY_LED_BLACK);
+		#if WITH_DIAG_PIXELS
+			setPixel(PIXEL_MODEL,MY_LED_BLACK);
+			setPixel(PIXEL_MODER,MY_LED_BLACK);
+		#endif
 	}
 
 	if (show_pixels)
 		pixels.show();
 
-	if (plot_values)
+	if (_plot_values == 1)
 	{
 		for (int i=0; i<NUM_HALL_PINS; i++)
 		{
@@ -679,7 +723,7 @@ void theClock::loop()	// override
 
 	static uint32_t last_num_beats;
 
-	if (!plot_values &&
+	if (!_plot_values &&
 		clock_started &&
 		num_beats % 10 == 0 &&
 		num_beats != last_num_beats)
