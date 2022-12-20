@@ -3,28 +3,34 @@
 #include <myIOTLog.h>
 #include <Adafruit_NeoPixel.h>
 
+// USES A TASK FOR RUNNING THE CLOCK
+//
+// there is too much critical timing in the clock run() method to allow it
+// allow it to run in loop() on the same core as the webservers, etc.
+// When just run from the default core(1), along with the Webserver, it
+// regularly misses crossings, etc, esp when the myIOT WebSocket goes on and off.
+//
+// So I made it a task on the unused core 0. However, tasks are limited to 10ms
+// time slices, and so it did not work at first.
+//
+// I was able to get it working. First I changed the call to vTaskDelay(0)
+// as I read that would yield without delay.  No joy.  I set the priority
+// of the task down to 1, no joy.  Finally I disabled the Watch Dog Timer,
+// (see code below) and that seems to work.
 
 
-#define CLOCK_USE_TASK	1
-	// there is too much critical timing in the clock run() method to
-	// allow it to run on the same core as the webservers, etc.  When just run from
-	// the default core(1), along with the Webserver, it regularly misses crossings,
-	// etc, esp when the myIOT WebSocket goes on and off.
-	//
-	// So I made it a task on the unused core 0. However, tasks are limited to 10ms
-	// time slices, and so it did not work at first.
-	//
-	// I was able to get it working. First I changed the call to vTaskDelay(0)
-	// as I read that would yield without delay.  No joy.  I set the priority
-	// of the task down to 1, no joy.  Finally I disabled the Watch Dog Timer,
-	// (see code below) and that seems to work.
+// TUNING STRATEGY
+//
+// 1. The hall threshold should be high enough so that we don't get false positions.
+// 2. With springs all the way out, using STATIC (PID off) mode, tune HIGH and LOW values for reliable motion.
+// 3. Adjust the weight to be close, but reliably longer than 1000ms
+// 4. Tune springs a bit
+// 5. With PID mode, fine adjust the springs and values
 
 
 //----------------------------
 // halls
 //----------------------------
-
-#define HALL_THRESH		30
 
 #define NUM_HALL_PINS	3
 #define NUM_SAMPLES     5
@@ -34,8 +40,6 @@ const int hall_pins[NUM_HALL_PINS] =
 	PIN_HALL1,
 	PIN_HALL2,
 	PIN_HALL3,
-	// PIN_HALL4,
-	// PIN_HALL5,
 };
 
 static int circ_ptr = 0;
@@ -48,11 +52,10 @@ static int hall_value[NUM_HALL_PINS];
 	static int hall_zero[NUM_HALL_PINS] = {1734,1876,1867};
 #endif
 
+
 //----------------------------
 // motors
 //----------------------------
-
-#define POWER_MAX   255
 
 #define PWM_FREQUENCY	5000
 #define PWM_RESOLUTION	8
@@ -83,15 +86,15 @@ static bool clock_started = 0;
 static int position = 0;
 static int max_left = 0;
 static int max_right = 0;
-
 static uint32_t cycle_start = 0;
 static uint32_t cycle_duration = 0;
 
 // PID
 
+
 static int32_t total_error = 0;
 static uint32_t prev_p = 0;
-static int save_high_power = 0;
+static int pid_power = 0;
 
 // Statistics
 
@@ -99,13 +102,12 @@ static uint32_t num_beats   = 0;
 static int num_restarts     = 0;
 static int num_stalls_left  = 0;
 static int num_stalls_right = 0;
-static int num_over_left 	= 0;
-static int num_over_right   = 0;
 static int32_t low_error    = 0;
 static int32_t high_error   = 0;
 static int32_t low_dur      = 0;
 static int32_t high_dur     = 0;
-
+static int min_power_used 	= 0;
+static int max_power_used   = 0;
 
 
 
@@ -184,17 +186,14 @@ void theClock::setup()	// override
 	pixels.setPixelColor(0,MY_LED_GREEN);
 	pixels.show();
 
-	save_high_power = _power_high;
-	#if CLOCK_USE_TASK
-	    LOGI("starting clockTask");
-		xTaskCreatePinnedToCore(clockTask,
-			"clockTask",
-			8192,           // task stack
-			NULL,           // param
-			1,  	        // note that the priority is higher than one
-			NULL,           // returned task handle
-			ESP32_CORE_OTHER);
-	#endif
+	LOGI("starting clockTask");
+	xTaskCreatePinnedToCore(clockTask,
+		"clockTask",
+		8192,           // task stack
+		NULL,           // param
+		1,  	        // note that the priority is higher than one
+		NULL,           // returned task handle
+		ESP32_CORE_OTHER);
 
 	if (_clock_running)
 		startClock();
@@ -208,6 +207,7 @@ void theClock::setup()	// override
 
 
 void motor(int state, int power)
+	// note output to channel B for backward compatibility with V1 circuit board
 {
 	int use_power = state ? power : 0;
 	ledcWrite(0, use_power);
@@ -239,12 +239,12 @@ void init()
 	num_restarts = 0;
 	num_stalls_left = 0;
 	num_stalls_right = 0;
-	num_over_left = 0;
-	num_over_right = 0;
 	low_error = 0;
 	high_error = 0;
 	low_dur = 32767;
 	high_dur = 0;
+	min_power_used = 255;
+	max_power_used = 0;
 }
 
 
@@ -259,12 +259,12 @@ void theClock::clearStats()
 	num_restarts = 0;
 	num_stalls_left = 0;
 	num_stalls_right = 0;
-	num_over_left = 0;
-	num_over_right = 0;
 	low_error = 0;
 	high_error = 0;
 	low_dur = 32767;
 	high_dur = 0;
+	min_power_used = 255;
+	max_power_used = 0;
 
 	// resetting the statistics also resets the
 	// start time for display.
@@ -276,10 +276,21 @@ void theClock::clearStats()
 
 void theClock::startClock()
 {
+	LOGU("startClock()");
+
 	init();
 	clock_started = 1;
+	setPixel(PIXEL_MAIN, MY_LED_WHITE);
+	pixels.show();
+	motor(-1,_power_start);
+	delay(_dur_start);
+	motor(0,0);
+	setPixel(PIXEL_MAIN, MY_LED_BLACK);
+	pixels.show();
+
 	the_clock->setTime(ID_TIME_LAST_START,time(NULL));
-	LOGU("startClock()");
+
+	pid_power = _power_high;
 }
 
 
@@ -305,14 +316,7 @@ void theClock::onClockRunningChanged(const myIOTValue *desc, bool val)
 void theClock::onPIDModeChanged(const myIOTValue *desc, bool val)
 {
 	LOGU("onPIDModeChanged(%d)",val);
-	if (val)
-	{
-		save_high_power = _power_high;
-	}
-	else
-	{
-		 _power_high = save_high_power;
-	}
+	pid_power = _power_high;
 }
 
 
@@ -348,99 +352,29 @@ void theClock::run()
 	// Determine incremental position  -4..-1 and 1..4
 	//
 	// Magnet to the left of a hall sensor is negative, to the right, positive.
-	//
-	// We get the final two extreme positions, -4, and 4, by noting that the outside sensor
-	// goes to zero, but does not cross, if the magnet is sufficiently far outside from it.
-	// We keep state variables to detect this case, so that when it returns we can set the
-	// 'past' positions -4 and 4.
 
-		static int past_l = 0;
-		static int past_r = 0;
-			// These are state variables.
-			//      0 = an "inside" position was encountered, so we cleared the state
-			//      1 = we are outside of the sensor for the first time, set the nominal position
-			//      2 = sensor went to zero after being in state 1
+	if (hall_value[0] < -_hall_thresh)	// detected the magnet to the left of sensor(0)
+		position = -3;
+	else if (hall_value[0] > _hall_thresh)
+		position = -2;
+	else if (hall_value[1] < -_hall_thresh)
+		position = -1;
 
-		if (past_l == 1 && abs(hall_value[0]) < HALL_THRESH)
-			past_l = 2;		// left sensor was outside and went to zero
+	// right side
 
-		if (past_r == 1 && abs(hall_value[2] < HALL_THRESH))
-			past_r = 2;		// right sensor was outside and went to zero
+	else if (hall_value[2] > _hall_thresh)
+		position = 3;
+	else if (hall_value[2] < -_hall_thresh)
+		position = 2;
+	else if (hall_value[1] > _hall_thresh)
+		position = 1;
 
-		if (hall_value[0] < -HALL_THRESH)	// detected the magnet to the left of sensor(0)
-		{
-			if (past_l == 2)				// and it previouly was to the left, but had gone to zero
-			{
-				position = -4;				// so therefore we WERE outside of it, and set the extreme position
-			}
-			else							// first times through
-			{
-				past_l = 1;
-				position = -3;
-			}
-		}
-		else if (hall_value[0] > HALL_THRESH)
-			position = -2;
-		else if (hall_value[1] < -HALL_THRESH)
-			position = -1;
+	// set the max_left and max_right
 
-		// right side
-
-		else if (hall_value[2] > HALL_THRESH)
-		{
-			if (past_r == 2)
-			{
-				position = 4;
-			}
-			else
-			{
-				past_r = 1;
-				position = 3;
-			}
-		}
-		else if (hall_value[2] < -HALL_THRESH)
-			position = 2;
-		else if (hall_value[1] > HALL_THRESH)
-			position = 1;
-
-		// reset 'past' state variables on any move to interior position
-
-		if (position >= -2)
-			past_l = 0;
-		if (position <= 2)
-			past_r = 0;
-
-	// set maximum points reached during cycle
-	// and show diagnostic pixels
-
-	static int save_left = 0;
-	static int save_right = 0;
 	if (position < 0 && position < max_left)
-	{
 		max_left = position;
-
-		#if WITH_DIAG_PIXELS
-			if (max_left == -4)
-				setPixel(PIXEL_LEFT,MY_LED_MAGENTA);
-			else if (max_left == -3)
-				setPixel(PIXEL_LEFT,MY_LED_GREEN);
-			else
-				setPixel(PIXEL_LEFT,MY_LED_RED);
-		#endif
-	}
 	if (position > 0 && position > max_right)
-	{
 		max_right = position;
-
-		#if WITH_DIAG_PIXELS
-			if (max_right == 4)
-				setPixel(PIXEL_RIGHT,MY_LED_MAGENTA);
-			else if (max_right == 3)
-				setPixel(PIXEL_RIGHT,MY_LED_GREEN);
-			else
-				setPixel(PIXEL_RIGHT,MY_LED_RED);
-		#endif
-	}
 
 
 	//----------------------------------------------------------
@@ -460,58 +394,96 @@ void theClock::run()
 	uint32_t now = millis();
 	if (clock_started && (now - last_change > 1500))
 	{
-		last_change = now;
 		num_restarts++;
 		LOGE("CLOCK STOPPED! - restarting!!");
-		#if WITH_DIAG_PIXELS == 0
-			setPixel(PIXEL_MAIN, MY_LED_WHITE);
-		#endif
-		motor(-1,POWER_MAX);
-		delay(200);
-		motor(0,0);
+		startClock();
+		last_change = now;
 	}
 
-	if (last_position != position)
+	if (last_position != position) //  && (now - last_change > 20))
 	{
+		static int save_left = 0;
+
 		last_change = now;
 
-		// MAIN HALF CYCLE (moving right to left)
+		// moving left to right
 
-		if (last_position == -1 && position == 1)	// moving left to right
+		if (last_position == -1 && position == 1)
 		{
 			num_beats++;
+
+			if (max_right < 3)
+			{
+				LOGE("STALL_RIGHT",0);
+				num_stalls_right++;
+			}
 
 			if (cycle_start)	// not the first time through
 			{
 				cycle_duration = now - cycle_start;
 				total_error += cycle_duration - 1000;
-			}
-			cycle_start = now;
 
-			if (total_error > high_error)
-				high_error = total_error;
-			if (total_error < low_error)
-				low_error = total_error;
-			if (cycle_duration < low_dur)
-				low_dur = cycle_duration;
-			if (cycle_duration > high_dur)
-				high_dur = cycle_duration;
+				if (total_error > high_error)
+					high_error = total_error;
+				if (total_error < low_error)
+					low_error = total_error;
+				if (cycle_duration < low_dur)
+					low_dur = cycle_duration;
+				if (cycle_duration > high_dur)
+					high_dur = cycle_duration;
 
-			if (!_plot_values)
-				LOGU("dur=%-4d  error=%-4d  power=%d",cycle_duration,total_error,_power_high);
+				if (_pid_mode && clock_started)
+				{
+					float this_p =  cycle_duration;		// this error
+					this_p = this_p - 1000;
+					float this_i = total_error;			// total error at this time
+					float this_d = 0;
 
-			#if WITH_DIAG_PIXELS
-				setPixel(PIXEL_DUR,
-					cycle_duration < 998 ? MY_LED_RED :
-					cycle_duration > 1001 ? MY_LED_BLUE :
-					MY_LED_GREEN);
-				setPixel(PIXEL_ERROR,
-					total_error < -2000 ? MY_LED_RED :
-					total_error < -200 ? MY_LED_MAGENTA :
-					total_error > 2000 ? MY_LED_BLUE :
-					total_error > 200 ? MY_LED_CYAN :
-					MY_LED_GREEN);
-			#else
+					if (prev_p)
+					{
+						this_d = this_p;
+						this_d -= prev_p;
+					}
+					prev_p = this_p;
+
+					this_p = this_p / 1000;
+					this_i = this_i / 1000;
+					this_d = this_d / 1000;
+
+					int old_power = pid_power;
+					float factor = 1 + (_pid_P * this_p) + (_pid_I * this_i) + (_pid_D * this_d);
+					float new_power = pid_power * factor;
+					if (new_power > _power_max) new_power = _power_max;
+					if (new_power  < _power_low) new_power = _power_low;
+					pid_power = new_power;
+
+					if (pid_power < min_power_used)
+						min_power_used = pid_power;
+					if (pid_power > max_power_used)
+						max_power_used = pid_power;
+
+					if (!_plot_values)
+						LOGI("left(%d) right(%d) duration(%d) error(%d) power(%d) old(%d)",save_left,max_right,cycle_duration,total_error,pid_power,old_power);
+
+					motor_start = now;
+					motor_dur = _dur_pulse;
+					motor(-1,pid_power);
+				}
+
+				// static mode
+
+				else if (clock_started)
+				{
+					if (!_plot_values)
+						LOGI("left(%d) right(%d) duration(%d) error(%d)",save_left,max_right,cycle_duration,total_error);
+					motor_start = now;
+					motor_dur = _dur_pulse;
+					if (max_right == 3)
+						motor(-1,_power_low);
+					else
+						motor(-1,_power_high);
+				}
+
 				setPixel(PIXEL_MAIN,
 					total_error > 2000 ? MY_LED_BLUE :
 					total_error < -2000 ? MY_LED_RED :
@@ -520,155 +492,28 @@ void theClock::run()
 					cycle_duration < 995 ?  MY_LED_YELLOW :
 					cycle_duration > 1005 ? MY_LED_CYAN :
 					MY_LED_GREEN);
-			#endif
 
-			if (_pid_mode)
-			{
-				float this_p =  cycle_duration;		// this error
-				this_p = this_p - 1000;
-				float this_i = total_error;			// total error at this time
-				float this_d = 0;
+				max_right = 0;
 
-				if (prev_p)
-				{
-					this_d = this_p;
-					this_d -= prev_p;
-				}
-				prev_p = this_p;
+			}
+			cycle_start = now;
+		}
 
-				this_p = this_p / 1000;
-				this_i = this_i / 1000;
-				this_d = this_d / 1000;
+		// moving right to left
 
-				float factor = 1 + (_pid_P * this_p) + (_pid_I * this_i) + (_pid_D * this_d);
-				float new_power = _power_high * factor;
-				if (new_power > POWER_MAX) new_power = POWER_MAX;
-				if (new_power  < _power_low) new_power = _power_low;
-
-				if (!_plot_values)
-					LOGI("power=%d myPID(%f,%f,%f) factor=%f  new=%f",_power_high,this_p,this_i,this_d,factor,new_power);
-				_power_high = new_power;
-
-			}	// pid_mode
-
-			// RIGHT IMPULSE
-
-			if (clock_started)
-			{
-				int use_power = 0;
-				int use_dur = 0;
-
-				// if (_pid_mode)
-				// {
-				// 	use_power = _power_high;
-				// 	use_dur = _dur_right;
-				// }
-				// else
-
-				if (max_right > 3)			// right went too far. use power_low (bypasses pid controller using power_low)
-				{
-					use_power = _power_low;
-					use_dur = _dur_right;
-					#if WITH_DIAG_PIXELS
-						setPixel(PIXEL_MODER,MY_LED_BLUE);
-					#endif
-					num_over_right++;
-				}
-				else if (max_right == 3)	// normal, use power_high (PID) and constant dur_right
-				{
-					use_power = _power_high;
-					use_dur = _dur_right;
-					#if WITH_DIAG_PIXELS
-						setPixel(PIXEL_MODER,MY_LED_GREEN);
-					#endif
-				}
-				else						// emergency - right stalled!
-				{
-					use_power = POWER_MAX;
-					use_dur = max_right == 2 ? _dur_stall : _dur_start;
-					#if WITH_DIAG_PIXELS
-						setPixel(PIXEL_MODER,MY_LED_RED);
-					#endif
-					LOGE("STALL_RIGHT",0);
-					num_stalls_right++;
-				}
-
-				motor_start = now;
-				motor_dur = use_dur;
-				motor(-1,use_power);
-
-			}	// clock_running (RIGHT IMPULSE)
-
-			max_right = 0;
-
-		}	// main cycle
-
-		// right to left HALF CYCLE
-
-		else if (last_position == 1 && position == -1)
+		if (last_position == 1 && position == -1)
 		{
-			if (clock_started)
+			if (max_left > -3)
 			{
-				int use_power = 0;
-				int use_dur = 0;
-
-				// if (_pid_mode)
-				// {
-				// 	use_power = _power_high;
-				// 	use_dur = _dur_left;
-				// }
-				// else
-
-				if (max_left < -3)			// left went to far, NO PULSE
-				{
-					use_power = 0;
-					use_dur = 0;
-					#if WITH_DIAG_PIXELS
-						setPixel(PIXEL_MODEL,MY_LED_BLUE);
-					#endif
-					num_over_left++;
-				}
-
-				// normal case if left made it to the sensor
-				// power_high will be controlled by the PID
-				// with the normal left duration
-
-				else if (max_left == -3)
-				{
-					use_power = _power_high;
-					use_dur = _dur_left;
-					#if WITH_DIAG_PIXELS
-						setPixel(PIXEL_MODEL,MY_LED_GREEN);
-					#endif
-				}
-
-				// emergency - left is stalled!
-
-				else
-				{
-					use_power = POWER_MAX;
-					use_dur = max_left == -2 ? _dur_stall : _dur_start;
-					#if WITH_DIAG_PIXELS
-						setPixel(PIXEL_MODEL,MY_LED_RED);
-					#endif
-					LOGE("STALL_LEFT",0);
-					num_stalls_left++;
-				}
-
-				motor_start = now;
-				motor_dur = use_dur;
-				motor(-1,use_power);
-
-			}	// LEFT IMPULSE
-
+				LOGE("STALL_LEFT",0);
+				num_stalls_left++;
+			}
+			save_left = max_left;
 			max_left = 0;
-
-		}	// right to left HALF CYCLE
+		}
 
 		last_position = position;
-
-	}	// position changed
-
+	}
 
 	//------------------------------------------------
 	// FINISH UP
@@ -680,10 +525,41 @@ void theClock::run()
 		motor_start = 0;
 		motor_dur = 0;
 		motor(0,0);
-		#if WITH_DIAG_PIXELS
-			setPixel(PIXEL_MODEL,MY_LED_BLACK);
-			setPixel(PIXEL_MODER,MY_LED_BLACK);
-		#endif
+	}
+
+	// flash light 3 times every 2 seconds if not started
+
+	if (!clock_started)
+	{
+		static bool flash_on = 0;
+		static int flash_count = 0;
+		static uint32_t flash_time = 0;
+		static uint32_t flash_dur = 0;
+
+		if (now - flash_time > flash_dur)
+		{
+			if (flash_on)
+			{
+				flash_on = 0;
+				flash_count++;
+				if (flash_count == 4)
+				{
+					flash_count = 0;
+					flash_dur = 1500;
+				}
+				else
+				{
+					flash_dur = 90;
+				}
+			}
+			else
+			{
+				flash_on = 1;
+				flash_dur = 30;
+			}
+			flash_time = now;
+			setPixel(PIXEL_MAIN,flash_on ? MY_LED_WHITE : MY_LED_BLACK);
+		}
 	}
 
 	if (show_pixels)
@@ -696,7 +572,12 @@ void theClock::run()
 			Serial.print(hall_value[i]);
 			Serial.print(",");
 		}
-		Serial.print("-1400,1400,");
+
+		// Serial.print(cycle_duration);
+
+		int err = cycle_duration - 1000;
+		Serial.print(1000 + err * 20);
+		Serial.print(",1000,-1400,1400,");
 		Serial.println(position * 200);
 	}
 
@@ -708,16 +589,6 @@ void theClock::run()
 void theClock::loop()	// override
 {
 	myIOTDevice::loop();
-
-	#if !CLOCK_USE_TASK
-		uint32_t now = millis();
-		static uint32_t last_sense = 0;
-		if (now - last_sense > 2)		// why every 3 ms?  dunno.  it works for now
-		{
-			last_sense = now;
-			the_clock->run();
-		}
-	#endif
 
 	// show stats every 10 beats
 
@@ -747,12 +618,12 @@ void theClock::loop()	// override
 		setInt(ID_STAT_RESTARTS,	num_restarts);
 		setInt(ID_STAT_STALLS_L,	num_stalls_left);
 		setInt(ID_STAT_STALLS_R,	num_stalls_right);
-		setInt(ID_STAT_OVER_L,		num_over_left);
-		setInt(ID_STAT_OVER_R,		num_over_right);
 		setInt(ID_STAT_ERROR_L,		low_error);
 		setInt(ID_STAT_ERROR_H,		high_error);
 		setInt(ID_STAT_DUR_L,		low_dur);
 		setInt(ID_STAT_DUR_H,		high_dur);
+		setInt(ID_MIN_POWER_USED,	min_power_used);
+		setInt(ID_MAX_POWER_USED,	max_power_used);
 	}
 
 }	// theClock::loop()

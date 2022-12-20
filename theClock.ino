@@ -1,6 +1,8 @@
 // the_clock.ino
 //
 // contains the myIOT device definition, setup() and loop()
+// Note that the default factory_reset turns WIFI off.
+// See /base/bat/platform.pm for compile time defines to the myIOT layer
 
 #include "theClock.h"
 #include <myIOTLog.h>
@@ -12,17 +14,22 @@
 #define THE_CLOCK             "theClock2"
 #define THE_CLOCK_VERSION     "2.0"
 
-#define DEFAULT_POWER_LOW		100
-#define DEFAULT_POWER_HIGH		180
+#define DEFAULT_RUNNING			 0			// factory reset == clock not running
+#define DEFAULT_PID_MODE		 1			// factory reset == PID mode turned on
 
-#define DEFAULT_DUR_LEFT		30
-#define DEFAULT_DUR_RIGHT		100
-#define DEFAULT_DUR_START		15
-#define DEFAULT_DUR_STALL		60
+#define DEFAULT_HALL_THRESH		60			// was 30 on Version 1.0
+
+#define DEFAULT_POWER_LOW		170			// STATIC: power when sensor reached; PID: mininum power
+#define DEFAULT_POWER_HIGH		210			// STATIC: power when sensor not reached;  PID: starting power
+#define DEFAULT_POWER_MAX		255			// PID: maximum power
+#define DEFAULT_POWER_START     255			// power during startup pulse
+
+#define DEFAULT_DUR_PULSE		100			// duration of power pulse for both PID and STATIC
+#define DEFAULT_DUR_START		200			// duration of startup pulse
 
 #define DEFAULT_PID_P			1.20
 #define DEFAULT_PID_I			0.10
-#define DEFAULT_PID_D			0.00
+#define DEFAULT_PID_D			0.00		// unused
 
 
 // what shows up on the "dashboard" UI tab
@@ -40,12 +47,12 @@ static valueIdType dash_items[] = {
 	ID_STAT_RESTARTS,
 	ID_STAT_STALLS_L,
 	ID_STAT_STALLS_R,
-	ID_STAT_OVER_L,
-	ID_STAT_OVER_R,
 	ID_STAT_ERROR_L,
 	ID_STAT_ERROR_H,
 	ID_STAT_DUR_L,
 	ID_STAT_DUR_H,
+	ID_MIN_POWER_USED,
+	ID_MAX_POWER_USED,
 
 	0,
 };
@@ -54,12 +61,13 @@ static valueIdType dash_items[] = {
 // what shows up on the "device" UI tab
 
 static valueIdType device_items[] = {
+	ID_HALL_THRESH,
 	ID_POWER_LOW,
     ID_POWER_HIGH,
-    ID_DUR_LEFT,
-	ID_DUR_RIGHT,
+	ID_POWER_MAX,
+	ID_POWER_START,
+    ID_DUR_PULSE,
 	ID_DUR_START,
-	ID_DUR_STALL,
 	ID_PID_P,
 	ID_PID_I,
 	ID_PID_D,
@@ -75,7 +83,7 @@ static enumValue plotAllowed[] = {
 
 
 
-// value descriptors for testDevice
+// value descriptors for theClock
 
 
 
@@ -84,16 +92,18 @@ const valDescriptor theClock::m_clock_values[] =
     { ID_DEVICE_NAME,      VALUE_TYPE_STRING,    VALUE_STORE_PREF,     VALUE_STYLE_REQUIRED,   NULL,   NULL,   THE_CLOCK },
         // DEVICE_NAME overrides base class element
 
-	{ ID_RUNNING,      		VALUE_TYPE_BOOL,     VALUE_STORE_PREF,     VALUE_STYLE_NONE,       (void *) &_clock_running,(void *) onClockRunningChanged, },
-	{ ID_PID_MODE,      	VALUE_TYPE_BOOL,     VALUE_STORE_PREF,     VALUE_STYLE_NONE,       (void *) &_pid_mode, 	(void *) onPIDModeChanged, },
+	{ ID_RUNNING,      		VALUE_TYPE_BOOL,     VALUE_STORE_PREF,     VALUE_STYLE_NONE,       (void *) &_clock_running,(void *) onClockRunningChanged, { .int_range = { DEFAULT_RUNNING }} },
+	{ ID_PID_MODE,      	VALUE_TYPE_BOOL,     VALUE_STORE_PREF,     VALUE_STYLE_NONE,       (void *) &_pid_mode, 	(void *) onPIDModeChanged, 		{ .int_range = { DEFAULT_PID_MODE }} },
 	{ ID_PLOT_VALUES,      	VALUE_TYPE_ENUM,     VALUE_STORE_PUB,      VALUE_STYLE_NONE,       (void *) &_plot_values, 	NULL,  { .enum_range = { 0, plotAllowed }} },
+
+	{ ID_HALL_THRESH,  		VALUE_TYPE_INT,      VALUE_STORE_PREF,     VALUE_STYLE_NONE,       (void *) &_hall_thresh,	NULL,  { .int_range = { DEFAULT_HALL_THRESH,  	0,  255}} },
 
 	{ ID_POWER_LOW,  		VALUE_TYPE_INT,      VALUE_STORE_PREF,     VALUE_STYLE_NONE,       (void *) &_power_low,	NULL,  { .int_range = { DEFAULT_POWER_LOW,  	0,  255}} },
 	{ ID_POWER_HIGH,  		VALUE_TYPE_INT,      VALUE_STORE_PREF,     VALUE_STYLE_NONE,       (void *) &_power_high,	NULL,  { .int_range = { DEFAULT_POWER_HIGH,   	0,  255}} },
-	{ ID_DUR_LEFT,  		VALUE_TYPE_INT,      VALUE_STORE_PREF,     VALUE_STYLE_NONE,       (void *) &_dur_left,		NULL,  { .int_range = { DEFAULT_DUR_LEFT,   	0,  255}} },
-	{ ID_DUR_RIGHT,  		VALUE_TYPE_INT,      VALUE_STORE_PREF,     VALUE_STYLE_NONE,       (void *) &_dur_right,	NULL,  { .int_range = { DEFAULT_DUR_RIGHT,   	0,  255}} },
+	{ ID_POWER_MAX,  		VALUE_TYPE_INT,      VALUE_STORE_PREF,     VALUE_STYLE_NONE,       (void *) &_power_max,	NULL,  { .int_range = { DEFAULT_POWER_MAX,   	0,  255}} },
+	{ ID_POWER_START,  		VALUE_TYPE_INT,      VALUE_STORE_PREF,     VALUE_STYLE_NONE,       (void *) &_power_start,	NULL,  { .int_range = { DEFAULT_POWER_START,   	0,  255}} },
+	{ ID_DUR_PULSE,  		VALUE_TYPE_INT,      VALUE_STORE_PREF,     VALUE_STYLE_NONE,       (void *) &_dur_pulse,	NULL,  { .int_range = { DEFAULT_DUR_PULSE,   	0,  255}} },
 	{ ID_DUR_START,  		VALUE_TYPE_INT,      VALUE_STORE_PREF,     VALUE_STYLE_NONE,       (void *) &_dur_start,	NULL,  { .int_range = { DEFAULT_DUR_START,   	0,  255}} },
-	{ ID_DUR_STALL,  		VALUE_TYPE_INT,      VALUE_STORE_PREF,     VALUE_STYLE_NONE,       (void *) &_dur_stall,	NULL,  { .int_range = { DEFAULT_DUR_STALL,   	0,  255}} },
 
 	{ ID_PID_P,  			VALUE_TYPE_FLOAT,    VALUE_STORE_PREF,     VALUE_STYLE_NONE,       (void *) &_pid_P,		NULL,  { .float_range = { DEFAULT_PID_P,   		0,  10}} },
 	{ ID_PID_I,  			VALUE_TYPE_FLOAT,    VALUE_STORE_PREF,     VALUE_STYLE_NONE,       (void *) &_pid_I,		NULL,  { .float_range = { DEFAULT_PID_I,   		0,  10}} },
@@ -108,18 +118,17 @@ const valDescriptor theClock::m_clock_values[] =
 	{ ID_STAT_RESTARTS,  	VALUE_TYPE_INT,      VALUE_STORE_PUB,      VALUE_STYLE_READONLY,   (void *) &_stat_restarts, 	NULL,  { .int_range = { 0, -DEVICE_MAX_INT-1,DEVICE_MAX_INT}} },
 	{ ID_STAT_STALLS_L,  	VALUE_TYPE_INT,      VALUE_STORE_PUB,      VALUE_STYLE_READONLY,   (void *) &_stat_stalls_left, NULL,  { .int_range = { 0, -DEVICE_MAX_INT-1,DEVICE_MAX_INT}} },
 	{ ID_STAT_STALLS_R,  	VALUE_TYPE_INT,      VALUE_STORE_PUB,      VALUE_STYLE_READONLY,   (void *) &_stat_stalls_right,NULL,  { .int_range = { 0, -DEVICE_MAX_INT-1,DEVICE_MAX_INT}} },
-	{ ID_STAT_OVER_L,  		VALUE_TYPE_INT,      VALUE_STORE_PUB,      VALUE_STYLE_READONLY,   (void *) &_stat_over_left,   NULL,  { .int_range = { 0, -DEVICE_MAX_INT-1,DEVICE_MAX_INT}} },
-	{ ID_STAT_OVER_R,  		VALUE_TYPE_INT,      VALUE_STORE_PUB,      VALUE_STYLE_READONLY,   (void *) &_stat_over_right, 	NULL,  { .int_range = { 0, -DEVICE_MAX_INT-1,DEVICE_MAX_INT}} },
 	{ ID_STAT_ERROR_L,  	VALUE_TYPE_INT,      VALUE_STORE_PUB,      VALUE_STYLE_READONLY,   (void *) &_stat_error_low, 	NULL,  { .int_range = { 0, -DEVICE_MAX_INT-1,DEVICE_MAX_INT}} },
 	{ ID_STAT_ERROR_H,  	VALUE_TYPE_INT,      VALUE_STORE_PUB,      VALUE_STYLE_READONLY,   (void *) &_stat_error_high, 	NULL,  { .int_range = { 0, -DEVICE_MAX_INT-1,DEVICE_MAX_INT}} },
 	{ ID_STAT_DUR_L,  		VALUE_TYPE_INT,      VALUE_STORE_PUB,      VALUE_STYLE_READONLY,   (void *) &_stat_dur_low, 	NULL,  { .int_range = { 0, -DEVICE_MAX_INT-1,DEVICE_MAX_INT}} },
 	{ ID_STAT_DUR_H,  		VALUE_TYPE_INT,      VALUE_STORE_PUB,      VALUE_STYLE_READONLY,   (void *) &_stat_dur_high, 	NULL,  { .int_range = { 0, -DEVICE_MAX_INT-1,DEVICE_MAX_INT}} },
-
+	{ ID_MIN_POWER_USED,  	VALUE_TYPE_INT,      VALUE_STORE_PUB,      VALUE_STYLE_READONLY,   (void *) &_min_power_used,   NULL,  { .int_range = { 0, -DEVICE_MAX_INT-1,DEVICE_MAX_INT}} },
+	{ ID_MAX_POWER_USED,  	VALUE_TYPE_INT,      VALUE_STORE_PUB,      VALUE_STYLE_READONLY,   (void *) &_max_power_used, 	NULL,  { .int_range = { 0, -DEVICE_MAX_INT-1,DEVICE_MAX_INT}} },
 };
 
 
-
 #define NUM_CLOCK_VALUES (sizeof(m_clock_values)/sizeof(valDescriptor))
+
 
 // static member data
 
@@ -127,13 +136,14 @@ bool 	theClock::_clock_running = 1;
 bool 	theClock::_pid_mode = 1;
 uint32_t theClock::_plot_values = 0;
 
+int  	theClock::_hall_thresh;
 int  	theClock::_power_low;
 int  	theClock::_power_high;
+int  	theClock::_power_max;
+int  	theClock::_power_start;
 
-int  	theClock::_dur_left;
-int  	theClock::_dur_right;
+int  	theClock::_dur_pulse;
 int  	theClock::_dur_start;
-int  	theClock::_dur_stall;
 
 float  	theClock::_pid_P;
 float  	theClock::_pid_I;
@@ -146,12 +156,12 @@ uint32_t theClock::_stat_beats;
 uint32_t theClock::_stat_restarts;
 uint32_t theClock::_stat_stalls_left;
 uint32_t theClock::_stat_stalls_right;
-uint32_t theClock::_stat_over_left;
-uint32_t theClock::_stat_over_right;
 int      theClock::_stat_error_low;
 int      theClock::_stat_error_high;
 int      theClock::_stat_dur_low;
 int      theClock::_stat_dur_high;
+uint32_t theClock::_min_power_used;
+uint32_t theClock::_max_power_used;
 
 
 // ctor
