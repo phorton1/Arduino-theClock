@@ -11,8 +11,13 @@
 // theClock definition
 //------------------------
 
-#define THE_CLOCK             "theClock2"
-#define THE_CLOCK_VERSION     "2.0"
+#if COMPILE_VERSION==2
+	#define THE_CLOCK             "theClock2"
+	#define THE_CLOCK_VERSION     "2.0"
+#else
+	#define THE_CLOCK             "theClock"
+	#define THE_CLOCK_VERSION     "1.0"
+#endif
 
 #define DEFAULT_RUNNING			 0			// factory reset == clock not running
 #define DEFAULT_PID_MODE		 1			// factory reset == PID mode turned on

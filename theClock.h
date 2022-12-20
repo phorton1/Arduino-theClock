@@ -5,6 +5,7 @@
 
 #define COMPILE_VERSION  2
 	// sets the (old) static HALL calibration values for V1 vs V2
+	// and the myIOT device name and version
 
 #define PIN_HALL1	32
 #define PIN_HALL2	35
