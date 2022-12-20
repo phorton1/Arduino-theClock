@@ -88,6 +88,8 @@ static int max_left = 0;
 static int max_right = 0;
 static uint32_t cycle_start = 0;
 static uint32_t cycle_duration = 0;
+static uint32_t last_change = 0;
+
 
 // PID
 
@@ -109,6 +111,25 @@ static int32_t high_dur     = 0;
 static int min_power_used 	= 0;
 static int max_power_used   = 0;
 
+
+// Buttons and pixel flashing
+
+#define FUNCTION_NONE  			0
+#define FUNCTION_STOPPED		1	// white		state
+#define FUNCTION_STOPPING		2	// white		short press
+#define FUNCTION_STARTING       3	// green		short press
+#define FUNCTION_WIFI_ON        4	// blue			long press (over 2 seconds)
+#define FUNCTION_WIFI_OFF       5	// magenta		long press (over 2 seconds)
+#define FUNCTION_RESET			6	// red			super long press (over 8 seconds)
+
+static int flash_fxn = FUNCTION_NONE;
+static bool flash_on = 0;
+static int flash_count = 0;
+static uint32_t flash_dur = 0;
+static uint32_t flash_time = 0;
+
+static uint32_t button_chk = 0;
+static uint32_t button_down = 0;
 
 
 #if 0
@@ -157,6 +178,8 @@ void theClock::setup()	// override
 	pixels.show();
 	delay(500);
 
+	pinMode(PIN_BUTTON,INPUT_PULLUP);
+
 	for (int i=0; i<NUM_HALL_PINS; i++)
 	{
 		pinMode(hall_pins[i],INPUT);
@@ -179,7 +202,7 @@ void theClock::setup()	// override
 
 	// one_time_calibrate_hall();
 
-	pixels.setPixelColor(0,MY_LED_YELLOW);
+	pixels.setPixelColor(0,MY_LED_BLUE);
 	pixels.show();
 	myIOTDevice::setup();
 
@@ -191,12 +214,14 @@ void theClock::setup()	// override
 		"clockTask",
 		8192,           // task stack
 		NULL,           // param
-		1,  	        // note that the priority is higher than one
+		10,  	        // note that the priority is higher than one
 		NULL,           // returned task handle
 		ESP32_CORE_OTHER);
 
 	if (_clock_running)
 		startClock();
+	else
+		flash_fxn = FUNCTION_STOPPED;
 
 	LOGU("theClock::setup() finished");
 	pixels.setPixelColor(0,MY_LED_BLACK);
@@ -291,6 +316,8 @@ void theClock::startClock()
 	the_clock->setTime(ID_TIME_LAST_START,time(NULL));
 
 	pid_power = _power_high;
+	flash_fxn = FUNCTION_NONE;
+	last_change = millis();
 }
 
 
@@ -298,6 +325,9 @@ void theClock::stopClock()
 {
 	init();
 	motor(0,0);
+	flash_fxn = FUNCTION_STOPPED;
+	flash_count = 0;
+	flash_time = millis();
 	LOGU("stopClock()");
 }
 
@@ -320,6 +350,9 @@ void theClock::onPIDModeChanged(const myIOTValue *desc, bool val)
 }
 
 
+//===================================================================
+// run()
+//===================================================================
 
 void theClock::run()
 {
@@ -386,13 +419,12 @@ void theClock::run()
 	static int last_position = 0;
 	static uint32_t motor_start = 0;
 	static uint32_t motor_dur = 0;
-	static uint32_t last_change = 0;
 
-	// if there have been no changes for 1.5 seconds
-	// give a small impulse to get the pendulum moving
+	// if there have been no changes for 3 seconds
+	// restart the clock
 
 	uint32_t now = millis();
-	if (clock_started && (now - last_change > 1500))
+	if (clock_started && (now - last_change > 3000))
 	{
 		num_restarts++;
 		LOGE("CLOCK STOPPED! - restarting!!");
@@ -412,7 +444,7 @@ void theClock::run()
 		{
 			num_beats++;
 
-			if (max_right < 3)
+			if (clock_started && max_right < 3)
 			{
 				LOGE("STALL_RIGHT",0);
 				num_stalls_right++;
@@ -484,14 +516,17 @@ void theClock::run()
 						motor(-1,_power_high);
 				}
 
-				setPixel(PIXEL_MAIN,
-					total_error > 2000 ? MY_LED_BLUE :
-					total_error < -2000 ? MY_LED_RED :
-					total_error > 200 ? MY_LED_BLUECYAN :
-					total_error < -200 ? MY_LED_ORANGE :
-					cycle_duration < 995 ?  MY_LED_YELLOW :
-					cycle_duration > 1005 ? MY_LED_CYAN :
-					MY_LED_GREEN);
+				if (clock_started && !button_down && !flash_fxn)
+				{
+					setPixel(PIXEL_MAIN,
+						total_error > 2000 ? MY_LED_BLUE :
+						total_error < -2000 ? MY_LED_RED :
+						total_error > 200 ? MY_LED_BLUECYAN :
+						total_error < -200 ? MY_LED_ORANGE :
+						cycle_duration < 995 ?  MY_LED_YELLOW :
+						cycle_duration > 1005 ? MY_LED_CYAN :
+						MY_LED_GREEN);
+				}
 
 				max_right = 0;
 
@@ -503,7 +538,7 @@ void theClock::run()
 
 		if (last_position == 1 && position == -1)
 		{
-			if (max_left > -3)
+			if (clock_started && max_left > -3)
 			{
 				LOGE("STALL_LEFT",0);
 				num_stalls_left++;
@@ -515,10 +550,10 @@ void theClock::run()
 		last_position = position;
 	}
 
+
 	//------------------------------------------------
-	// FINISH UP
+	// stop the impulse
 	//------------------------------------------------
-	// stop the impulse, plot values, show leds, etc
 
 	if (motor_start && now - motor_start > motor_dur)
 	{
@@ -527,43 +562,12 @@ void theClock::run()
 		motor(0,0);
 	}
 
-	// flash light 3 times every 2 seconds if not started
-
-	if (!clock_started)
-	{
-		static bool flash_on = 0;
-		static int flash_count = 0;
-		static uint32_t flash_time = 0;
-		static uint32_t flash_dur = 0;
-
-		if (now - flash_time > flash_dur)
-		{
-			if (flash_on)
-			{
-				flash_on = 0;
-				flash_count++;
-				if (flash_count == 4)
-				{
-					flash_count = 0;
-					flash_dur = 1500;
-				}
-				else
-				{
-					flash_dur = 90;
-				}
-			}
-			else
-			{
-				flash_on = 1;
-				flash_dur = 30;
-			}
-			flash_time = now;
-			setPixel(PIXEL_MAIN,flash_on ? MY_LED_WHITE : MY_LED_BLACK);
-		}
-	}
-
 	if (show_pixels)
 		pixels.show();
+
+	//------------------------
+	// plot values
+	//------------------------
 
 	if (_plot_values == 1)
 	{
@@ -585,12 +589,133 @@ void theClock::run()
 
 
 
+//===================================================================
+// loop
+//===================================================================
+
 // virtual
 void theClock::loop()	// override
 {
 	myIOTDevice::loop();
 
+	//-----------------------------
+	// handle button
+	//-----------------------------
+
+	uint32_t now = millis();
+	if (now - button_chk > 33)	// 30 times per second
+	{
+		button_chk = now;
+		static int last_press = 0;
+		bool val = !digitalRead(PIN_BUTTON);
+		if (button_down)
+		{
+			uint32_t dur = now - button_down;
+			int press =
+				dur > 8000 ? 3 :			// long press
+				dur > 2000 ? 2 : 1;			// medium, short press
+			int fxn =
+				press == 3 ? FUNCTION_RESET :
+				press == 2 ? getBool(ID_DEVICE_WIFI) ?
+					FUNCTION_WIFI_OFF :
+					FUNCTION_WIFI_ON :
+				getBool(ID_RUNNING) ?
+					FUNCTION_STOPPING :
+					FUNCTION_STARTING;
+
+			if (!val)
+			{
+				LOGD("button_up dur(%d) press(%d) fxn(%d)",dur,press,fxn);
+
+				flash_fxn = fxn;
+				button_down = 0;
+				setPixel(PIXEL_MAIN,MY_LED_BLACK);
+				pixels.show();
+			}
+			else if (last_press != press)
+			{
+				LOGD("button_down dur(%d) press(%d) fxn(%d)",dur,press,fxn);
+
+				last_press = press;
+				setPixel(PIXEL_MAIN,
+					fxn == FUNCTION_RESET ? MY_LED_RED :
+					fxn == FUNCTION_WIFI_OFF ? MY_LED_MAGENTA :
+					fxn == FUNCTION_WIFI_ON ? MY_LED_BLUE :
+					fxn == FUNCTION_STARTING ? MY_LED_GREEN :
+					MY_LED_WHITE);
+				pixels.show();
+			}
+		}
+		else if (val && !button_down)
+		{
+			LOGD("button_down",0);
+			button_down = now;
+			flash_fxn = 0;
+			flash_count = 0;
+			flash_time = 0;
+			last_press = 0;
+		}
+	}
+
+	//------------------------
+	// FLASH PIXELS
+	//------------------------
+
+	if (flash_fxn && now - flash_time > flash_dur)
+	{
+		uint32_t color;
+		if (flash_on)
+		{
+			flash_on = 0;
+			flash_dur = 400;
+			flash_count++;
+			color = MY_LED_BLACK;
+		}
+		else
+		{
+			flash_on = 1;
+			flash_dur = 100;
+			color =
+				flash_fxn == FUNCTION_STARTING ? MY_LED_GREEN :
+				flash_fxn == FUNCTION_WIFI_ON ? MY_LED_BLUE :
+				flash_fxn == FUNCTION_WIFI_OFF ? MY_LED_MAGENTA :
+				flash_fxn == FUNCTION_RESET ? MY_LED_RED :
+				MY_LED_WHITE;	// STOPPED or STOPPING
+				MY_LED_YELLOW;	// unknown function
+
+		}
+		flash_time = now;
+		setPixel(PIXEL_MAIN,color);
+		pixels.show();
+		if (flash_count == 5)
+		{
+			int fxn = flash_fxn;
+			flash_fxn = FUNCTION_NONE;
+
+			if (fxn == FUNCTION_RESET)
+				the_clock->factoryReset();
+			else if (fxn == FUNCTION_WIFI_OFF)
+				the_clock->setBool(ID_DEVICE_WIFI,0);
+			else if (fxn == FUNCTION_WIFI_ON)
+				the_clock->setBool(ID_DEVICE_WIFI,1);
+			else if (fxn == FUNCTION_STARTING)
+				the_clock->setBool(ID_RUNNING,1);
+			else if (fxn == FUNCTION_STOPPING && clock_started)
+			{
+				the_clock->setBool(ID_RUNNING,0);
+				flash_fxn = FUNCTION_STOPPED;
+			}
+			else if (fxn == FUNCTION_STOPPED)
+				flash_fxn = FUNCTION_STOPPED;
+
+			flash_dur = 5000;
+			flash_count = 0;
+		}
+	}
+
+	//---------------------------------
 	// show stats every 10 beats
+	//---------------------------------
 
 	static uint32_t last_num_beats;
 
