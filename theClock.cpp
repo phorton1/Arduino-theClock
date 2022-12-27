@@ -498,7 +498,7 @@ void theClock::run()
 						LOGI("left(%d) right(%d) duration(%d) error(%d) power(%d) old(%d)",save_left,max_right,cycle_duration,total_error,pid_power,old_power);
 
 					motor_start = now;
-					motor_dur = _dur_pulse;
+					motor_dur = _dur_right;
 					motor(-1,pid_power);
 				}
 
@@ -509,7 +509,7 @@ void theClock::run()
 					if (!_plot_values)
 						LOGI("left(%d) right(%d) duration(%d) error(%d)",save_left,max_right,cycle_duration,total_error);
 					motor_start = now;
-					motor_dur = _dur_pulse;
+					motor_dur = _dur_right;
 					if (max_right == 3)
 						motor(-1,_power_low);
 					else
@@ -536,13 +536,26 @@ void theClock::run()
 
 		// moving right to left
 
-		if (last_position == 1 && position == -1)
+		if (clock_started && last_position == 1 && position == -1)
 		{
-			if (clock_started && max_left > -3)
+			if (max_left > -3)
 			{
 				LOGE("STALL_LEFT",0);
 				num_stalls_left++;
 			}
+
+			if (_dur_left)
+			{
+				motor_start = now;
+				motor_dur = _dur_right;
+				if (_pid_mode)
+					motor(-1,pid_power);
+				else if (max_right == 3)
+					motor(-1,_power_low);
+				else
+					motor(-1,_power_high);
+			}
+
 			save_left = max_left;
 			max_left = 0;
 		}

@@ -24,12 +24,15 @@
 
 #define DEFAULT_HALL_THRESH		60			// was 30 on Version 1.0
 
-#define DEFAULT_POWER_LOW		170			// STATIC: power when sensor reached; PID: mininum power
+#define DEFAULT_POWER_LOW		170			// v1(190) STATIC: power when sensor reached; PID: mininum power
 #define DEFAULT_POWER_HIGH		210			// STATIC: power when sensor not reached;  PID: starting power
 #define DEFAULT_POWER_MAX		255			// PID: maximum power
 #define DEFAULT_POWER_START     255			// power during startup pulse
 
-#define DEFAULT_DUR_PULSE		100			// duration of power pulse for both PID and STATIC
+#define DEFAULT_DUR_LEFT		0			// v1(30) duration of left power pulse for both PID and STATIC
+	// default of zero *should* be identical to V2.0 shipped to Pamela
+	// a value of 60 is roughly comparable to old V1.1
+#define DEFAULT_DUR_RIGHT		120			// v1(160) duration of right power pulse for both PID and STATIC
 #define DEFAULT_DUR_START		200			// duration of startup pulse
 
 #define DEFAULT_PID_P			1.20
@@ -71,7 +74,8 @@ static valueIdType device_items[] = {
     ID_POWER_HIGH,
 	ID_POWER_MAX,
 	ID_POWER_START,
-    ID_DUR_PULSE,
+    ID_DUR_LEFT,
+    ID_DUR_RIGHT,
 	ID_DUR_START,
 	ID_PID_P,
 	ID_PID_I,
@@ -107,7 +111,8 @@ const valDescriptor theClock::m_clock_values[] =
 	{ ID_POWER_HIGH,  		VALUE_TYPE_INT,      VALUE_STORE_PREF,     VALUE_STYLE_NONE,       (void *) &_power_high,	NULL,  { .int_range = { DEFAULT_POWER_HIGH,   	0,  255}} },
 	{ ID_POWER_MAX,  		VALUE_TYPE_INT,      VALUE_STORE_PREF,     VALUE_STYLE_NONE,       (void *) &_power_max,	NULL,  { .int_range = { DEFAULT_POWER_MAX,   	0,  255}} },
 	{ ID_POWER_START,  		VALUE_TYPE_INT,      VALUE_STORE_PREF,     VALUE_STYLE_NONE,       (void *) &_power_start,	NULL,  { .int_range = { DEFAULT_POWER_START,   	0,  255}} },
-	{ ID_DUR_PULSE,  		VALUE_TYPE_INT,      VALUE_STORE_PREF,     VALUE_STYLE_NONE,       (void *) &_dur_pulse,	NULL,  { .int_range = { DEFAULT_DUR_PULSE,   	0,  255}} },
+	{ ID_DUR_LEFT,  		VALUE_TYPE_INT,      VALUE_STORE_PREF,     VALUE_STYLE_NONE,       (void *) &_dur_left,		NULL,  { .int_range = { DEFAULT_DUR_LEFT,   	0,  255}} },
+	{ ID_DUR_RIGHT,  		VALUE_TYPE_INT,      VALUE_STORE_PREF,     VALUE_STYLE_NONE,       (void *) &_dur_right,	NULL,  { .int_range = { DEFAULT_DUR_RIGHT,   	0,  255}} },
 	{ ID_DUR_START,  		VALUE_TYPE_INT,      VALUE_STORE_PREF,     VALUE_STYLE_NONE,       (void *) &_dur_start,	NULL,  { .int_range = { DEFAULT_DUR_START,   	0,  255}} },
 
 	{ ID_PID_P,  			VALUE_TYPE_FLOAT,    VALUE_STORE_PREF,     VALUE_STYLE_NONE,       (void *) &_pid_P,		NULL,  { .float_range = { DEFAULT_PID_P,   		0,  10}} },
@@ -147,7 +152,8 @@ int  	theClock::_power_high;
 int  	theClock::_power_max;
 int  	theClock::_power_start;
 
-int  	theClock::_dur_pulse;
+int  	theClock::_dur_left;
+int  	theClock::_dur_right;
 int  	theClock::_dur_start;
 
 float  	theClock::_pid_P;

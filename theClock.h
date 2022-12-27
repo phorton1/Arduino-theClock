@@ -57,7 +57,8 @@
 #define ID_POWER_MAX      	"POWER_MAX"
 #define ID_POWER_START      "POWER_START"
 
-#define ID_DUR_PULSE      	"DUR_PULSE"
+#define ID_DUR_LEFT      	"DUR_LEFT"
+#define ID_DUR_RIGHT      	"DUR_RIGHT"
 #define ID_DUR_START		"DUR_START"
 
 #define ID_PID_P			"PID_P"
@@ -106,7 +107,8 @@ private:
 	static int _power_max;      // PID: maximum power
 	static int _power_start;    // power during startup pulse
 
-	static int _dur_pulse;		// duration of power pulse for both PID and STATIC
+	static int _dur_left;		// duration of left power pulse for both PID and STATIC
+	static int _dur_right;		// duration of right power pulse for both PID and STATIC
 	static int _dur_start;		// duration of startup pulse
 
 	static float _pid_P;
