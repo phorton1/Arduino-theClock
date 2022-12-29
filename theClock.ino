@@ -24,7 +24,7 @@
 
 #define DEFAULT_HALL_THRESH		60			// was 30 on Version 1.0
 
-#define DEFAULT_POWER_LOW		170			// v1(190) STATIC: power when sensor reached; PID: mininum power
+#define DEFAULT_POWER_LOW		170			// v1(180) STATIC: power when sensor reached; PID: mininum power
 #define DEFAULT_POWER_HIGH		210			// STATIC: power when sensor not reached;  PID: starting power
 #define DEFAULT_POWER_MAX		255			// PID: maximum power
 #define DEFAULT_POWER_START     255			// power during startup pulse
@@ -32,11 +32,11 @@
 #define DEFAULT_DUR_LEFT		0			// v1(30) duration of left power pulse for both PID and STATIC
 	// default of zero *should* be identical to V2.0 shipped to Pamela
 	// a value of 60 is roughly comparable to old V1.1
-#define DEFAULT_DUR_RIGHT		120			// v1(160) duration of right power pulse for both PID and STATIC
+#define DEFAULT_DUR_RIGHT		120			// v1(150) duration of right power pulse for both PID and STATIC
 #define DEFAULT_DUR_START		200			// duration of startup pulse
 
-#define DEFAULT_PID_P			1.20
-#define DEFAULT_PID_I			0.10
+#define DEFAULT_PID_P			1.20		// v1(1.5)
+#define DEFAULT_PID_I			0.10		// v1(0.2)
 #define DEFAULT_PID_D			0.00		// unused
 
 

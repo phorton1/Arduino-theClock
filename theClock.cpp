@@ -434,8 +434,7 @@ void theClock::run()
 
 	if (last_position != position) //  && (now - last_change > 20))
 	{
-		static int save_left = 0;
-
+		int use_power = 0;
 		last_change = now;
 
 		// moving left to right
@@ -494,26 +493,19 @@ void theClock::run()
 					if (pid_power > max_power_used)
 						max_power_used = pid_power;
 
-					if (!_plot_values)
-						LOGI("left(%d) right(%d) duration(%d) error(%d) power(%d) old(%d)",save_left,max_right,cycle_duration,total_error,pid_power,old_power);
-
-					motor_start = now;
 					motor_dur = _dur_right;
-					motor(-1,pid_power);
+					use_power = pid_power;
 				}
 
-				// static mode
+				// static mode right
 
 				else if (clock_started)
 				{
-					if (!_plot_values)
-						LOGI("left(%d) right(%d) duration(%d) error(%d)",save_left,max_right,cycle_duration,total_error);
-					motor_start = now;
 					motor_dur = _dur_right;
 					if (max_right == 3)
-						motor(-1,_power_low);
+						use_power = _power_low;
 					else
-						motor(-1,_power_high);
+						use_power = _power_high;
 				}
 
 				if (clock_started && !button_down && !flash_fxn)
@@ -527,6 +519,9 @@ void theClock::run()
 						cycle_duration > 1005 ? MY_LED_CYAN :
 						MY_LED_GREEN);
 				}
+
+				if (!_plot_values)
+					LOGI("RIGHT(%d) dur(%d) power(%d) cycle(%d) error(%d)",max_right,motor_dur,use_power,cycle_duration,total_error);
 
 				max_right = 0;
 
@@ -546,18 +541,27 @@ void theClock::run()
 
 			if (_dur_left)
 			{
-				motor_start = now;
-				motor_dur = _dur_right;
+				motor_dur = _dur_left;
 				if (_pid_mode)
-					motor(-1,pid_power);
+					use_power = pid_power;
 				else if (max_right == 3)
-					motor(-1,_power_low);
+					use_power = _power_low;
 				else
-					motor(-1,_power_high);
+					use_power = _power_high;
+
+				if (!_plot_values)
+					LOGI(" LEFT(%d) dur(%d) power(%d)",max_left,motor_dur,use_power);
 			}
 
-			save_left = max_left;
 			max_left = 0;
+		}
+
+		// IMPULSE
+
+		if (use_power)
+		{
+			motor_start = now;
+			motor(-1,use_power);
 		}
 
 		last_position = position;
