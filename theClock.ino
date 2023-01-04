@@ -39,6 +39,8 @@
 #define DEFAULT_PID_I			0.10		// v1(0.2)
 #define DEFAULT_PID_D			0.00		// unused
 
+#define DEFAULT_STAT_INTERVAL	10
+
 
 // what shows up on the "dashboard" UI tab
 
@@ -80,6 +82,7 @@ static valueIdType device_items[] = {
 	ID_PID_P,
 	ID_PID_I,
 	ID_PID_D,
+	ID_STAT_INTERVAL,
     0
 };
 
@@ -134,6 +137,8 @@ const valDescriptor theClock::m_clock_values[] =
 	{ ID_STAT_DUR_H,  		VALUE_TYPE_INT,      VALUE_STORE_PUB,      VALUE_STYLE_READONLY,   (void *) &_stat_dur_high, 	NULL,  { .int_range = { 0, -DEVICE_MAX_INT-1,DEVICE_MAX_INT}} },
 	{ ID_MIN_POWER_USED,  	VALUE_TYPE_INT,      VALUE_STORE_PUB,      VALUE_STYLE_READONLY,   (void *) &_min_power_used,   NULL,  { .int_range = { 0, -DEVICE_MAX_INT-1,DEVICE_MAX_INT}} },
 	{ ID_MAX_POWER_USED,  	VALUE_TYPE_INT,      VALUE_STORE_PUB,      VALUE_STYLE_READONLY,   (void *) &_max_power_used, 	NULL,  { .int_range = { 0, -DEVICE_MAX_INT-1,DEVICE_MAX_INT}} },
+
+	{ ID_STAT_INTERVAL,  	VALUE_TYPE_INT,      VALUE_STORE_PREF,     VALUE_STYLE_OFF_ZERO,   (void *) &_stat_interval, 	NULL,  { .int_range = { DEFAULT_STAT_INTERVAL,1,3600}} },
 };
 
 
@@ -173,6 +178,8 @@ int      theClock::_stat_dur_low;
 int      theClock::_stat_dur_high;
 uint32_t theClock::_min_power_used;
 uint32_t theClock::_max_power_used;
+
+uint32_t theClock::_stat_interval;
 
 
 // ctor

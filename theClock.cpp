@@ -731,14 +731,15 @@ void theClock::loop()	// override
 	}
 
 	//---------------------------------
-	// show stats every 10 beats
+	// show stats every 60 beats
 	//---------------------------------
 
 	static uint32_t last_num_beats;
 
-	if (!_plot_values &&
+	if (_stat_interval &&
+		num_beats % _stat_interval == 0 &&
+		!_plot_values &&
 		clock_started &&
-		num_beats % 10 == 0 &&
 		num_beats != last_num_beats)
 	{
 		last_num_beats = num_beats;

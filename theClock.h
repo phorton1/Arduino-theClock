@@ -81,6 +81,9 @@
 #define ID_MIN_POWER_USED	"MIN_POWER_USED"
 #define ID_MAX_POWER_USED	"MAX_POWER_USED"
 
+#define ID_STAT_INTERVAL	"STAT_INTERVAL"
+
+
 
 class theClock : public myIOTDevice
 {
@@ -128,6 +131,8 @@ private:
 	static int _stat_dur_high;
 	static uint32_t _min_power_used;
 	static uint32_t _max_power_used;
+
+	static uint32_t _stat_interval;
 
 	static void startClock();
 	static void stopClock();
