@@ -22,10 +22,10 @@
 #define DEFAULT_RUNNING			 0			// factory reset == clock not running
 #define DEFAULT_PID_MODE		 1			// factory reset == PID mode turned on
 
-#define DEFAULT_HALL_THRESH		60			// was 30 on Version 1.0
+#define DEFAULT_HALL_THRESH		60			// parameterized but never really changed
 
-#define DEFAULT_POWER_LOW		170			// v1(180) STATIC: power when sensor reached; PID: mininum power
-#define DEFAULT_POWER_HIGH		210			// STATIC: power when sensor not reached;  PID: starting power
+#define DEFAULT_POWER_LOW		170			// v1(187) STATIC: power when sensor reached; PID: mininum power
+#define DEFAULT_POWER_HIGH		210			// v1(240) STATIC: power when sensor not reached;  PID: starting power
 #define DEFAULT_POWER_MAX		255			// PID: maximum power
 #define DEFAULT_POWER_START     255			// power during startup pulse
 
@@ -39,7 +39,7 @@
 #define DEFAULT_PID_I			0.10		// v1(0.2)
 #define DEFAULT_PID_D			0.00		// unused
 
-#define DEFAULT_STAT_INTERVAL	10
+#define DEFAULT_STAT_INTERVAL	300			// v2 was shipped with constant 10
 
 
 // what shows up on the "dashboard" UI tab
