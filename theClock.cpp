@@ -299,6 +299,122 @@ void theClock::clearStats()
 
 }
 
+
+
+// from chatGPT
+
+#include <WiFi.h>
+#include <WiFiUdp.h>
+
+static unsigned int localPort = 2390;      // local port to listen for UDP packets
+static const char* ntpServer = "pool.ntp.org";
+
+// modified, theirs was 3600,3600
+// so with DST turned on, this gave 7200.
+// NOTE that this IS NOT what is displayed in the log time,
+// because THAT goes through the time zone settings in myIOTHttp.cpp NTP code ...
+// AND I *think* that passing a GMT time to the web browser shows it in the machine's timezone,
+// AND NOTE that display of times with the command line is NOT working.
+
+
+static const long  gmtOffset_sec = 0;		// time(NULL) returns GMT?
+static const int   daylightOffset_sec = 0;		// was 3600;
+
+// my additions
+
+static const int NTP_PACKET_SIZE = 48;
+static byte packetBuffer[ NTP_PACKET_SIZE];
+
+static WiFiUDP  udp;
+IPAddress timeServer;
+static bool udp_started = 0;
+
+
+
+static void sendNTPpacket(IPAddress &address)
+	// send an NTP request to the time server at the given address
+{
+	// set all bytes in the buffer to 0
+	memset(packetBuffer, 0, NTP_PACKET_SIZE);
+	// Initialize values needed to form NTP request
+	// (see URL above for details on the packets)
+	packetBuffer[0] = 0b11100011;   // LI, Version, Mode
+	packetBuffer[1] = 0;     // Stratum, or type of clock
+	packetBuffer[2] = 6;     // Polling Interval
+	packetBuffer[3] = 0xEC;  // Peer Clock Precision
+	// 8 bytes of zero for Root Delay & Root Dispersion
+	packetBuffer[12]  = 49;
+	packetBuffer[13]  = 0x4E;
+	packetBuffer[14]  = 49;
+	packetBuffer[15]  = 52;
+
+	// all NTP fields have been given values, now
+	// you can send a packet requesting a timestamp:
+
+	udp.beginPacket(address, 123); //NTP requests are to port 123
+	udp.write(packetBuffer, NTP_PACKET_SIZE);
+	udp.endPacket();
+}
+
+
+
+time_t getNtpTime()
+{
+	if (WiFi.status() != WL_CONNECTED)
+		return 0;
+	if (udp_started == -1)
+		return 0;
+
+	if (!udp_started)
+	{
+		udp_started = -1;
+		LOGD("starting UDP");
+		WiFi.hostByName(ntpServer, timeServer);
+		LOGD("%s = %s",ntpServer,timeServer.toString().c_str());
+		if (!udp.begin(localPort))
+		{
+			LOGE("Could not start UDP on localPort(%d)",localPort);
+			return 0;
+		}
+		LOGD("UDP started on localPort(%d)",localPort);
+		udp_started = 1;
+	}
+
+	while (udp.parsePacket() > 0) ; // discard any previously received packets
+
+	LOGD("Transmit NTP Request");
+	sendNTPpacket(timeServer);
+
+	uint32_t beginWait = millis();
+	while (millis() - beginWait < 1500)
+	{
+		int size = udp.parsePacket();
+		if (size >= NTP_PACKET_SIZE)
+		{
+			LOGD("Receive NTP Response");
+			udp.read(packetBuffer, NTP_PACKET_SIZE);  // read packet into the buffer
+			unsigned long secsSince1900;
+
+			// convert four bytes starting at location 40 to a long integer
+			secsSince1900 =  (unsigned long)packetBuffer[40] << 24;
+			secsSince1900 |= (unsigned long)packetBuffer[41] << 16;
+			secsSince1900 |= (unsigned long)packetBuffer[42] << 8;
+			secsSince1900 |= (unsigned long)packetBuffer[43];
+			secsSince1900 -= 2208988800UL + gmtOffset_sec + daylightOffset_sec;
+
+			LOGD("secsSince1900=%d",secsSince1900);
+			return secsSince1900;
+
+		}
+	}
+
+	LOGE("No NTP Response :-(");
+	return 0; // return 0 if unable to get the time
+}
+
+
+
+
 void theClock::startClock()
 {
 	LOGU("startClock()");
@@ -768,6 +884,25 @@ void theClock::loop()	// override
 		setInt(ID_MIN_POWER_USED,	min_power_used);
 		setInt(ID_MAX_POWER_USED,	max_power_used);
 	}
+
+
+	// Testing NTP
+	// I am using the "pause" mode of _plot_values for this.
+	// Typically I turn off the clock.
+	// I am not sure if the ESP32 intercepts the UDP calls, but otherwise,
+	//     there should be some drift between them over time.
+
+
+	static uint32_t last_debug = 0;
+	if (_plot_values == 2 && now > last_debug + 5000 )
+	{
+		last_debug = now;
+
+		time_t sys_time = time(NULL);
+		time_t ntp_time = getNtpTime();
+		LOGD("---> sys_time=%d   ntp_time=%d",sys_time, ntp_time);
+	}
+
 
 }	// theClock::loop()
 
