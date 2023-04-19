@@ -676,4 +676,10 @@ Text GLabel 3800 5350 2    50   Input ~ 0
 SW
 Text GLabel 5050 5000 3    50   Input ~ 0
 SW
+Wire Notes Line
+	4450 4000 4450 3600
+Wire Notes Line
+	4450 3600 5350 3600
+Wire Notes Line
+	5350 3600 5350 3750
 $EndSCHEMATC

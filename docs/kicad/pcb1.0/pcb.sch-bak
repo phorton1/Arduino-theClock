@@ -134,7 +134,7 @@ F 3 "" H 1850 5500 50  0001 C CNN
 	1    1850 5500
 	1    0    0    -1  
 $EndComp
-Text GLabel 5150 5000 3    50   Input ~ 0
+Text GLabel 5650 5000 3    50   Input ~ 0
 LED
 Text GLabel 1950 5500 1    50   Input ~ 0
 LED
@@ -262,7 +262,7 @@ Wire Wire Line
 Wire Wire Line
 	5850 3900 5850 4000
 Connection ~ 6050 3750
-Text GLabel 5050 5000 3    50   Input ~ 0
+Text GLabel 5350 5000 3    50   Input ~ 0
 ID1
 Text GLabel 5750 5000 3    50   Input ~ 0
 ID2
@@ -543,7 +543,7 @@ L Connector_Generic:Conn_01x04 J1
 U 1 1 637484BE
 P 8250 5850
 F 0 "J1" V 8214 5562 50  0000 R CNN
-F 1 "coil34" V 8123 5562 50  0000 R CNN
+F 1 "coil48" V 8123 5562 50  0000 R CNN
 F 2 "cnc3018-PCB:my4pin" H 8250 5850 50  0001 C CNN
 F 3 "~" H 8250 5850 50  0001 C CNN
 	1    8250 5850
@@ -562,7 +562,7 @@ L Connector_Generic:Conn_01x04 J3
 U 1 1 6374AAD5
 P 7400 3150
 F 0 "J3" V 7364 2862 50  0000 R CNN
-F 1 "coil12" V 7273 2862 50  0000 R CNN
+F 1 "coil15" V 7273 2862 50  0000 R CNN
 F 2 "cnc3018-PCB:my4pin" H 7400 3150 50  0001 C CNN
 F 3 "~" H 7400 3150 50  0001 C CNN
 	1    7400 3150
@@ -581,7 +581,7 @@ L Connector_Generic:Conn_01x04 J8
 U 1 1 637A926B
 P 8250 3150
 F 0 "J8" V 8214 2862 50  0000 R CNN
-F 1 "coil12" V 8123 2862 50  0000 R CNN
+F 1 "coil126" V 8123 2862 50  0000 R CNN
 F 2 "cnc3018-PCB:my4pin" H 8250 3150 50  0001 C CNN
 F 3 "~" H 8250 3150 50  0001 C CNN
 	1    8250 3150
@@ -592,7 +592,7 @@ L Connector_Generic:Conn_01x04 J9
 U 1 1 637B3A0B
 P 7500 5850
 F 0 "J9" V 7464 5562 50  0000 R CNN
-F 1 "coil34" V 7373 5562 50  0000 R CNN
+F 1 "coil37" V 7373 5562 50  0000 R CNN
 F 2 "cnc3018-PCB:my4pin" H 7500 5850 50  0001 C CNN
 F 3 "~" H 7500 5850 50  0001 C CNN
 	1    7500 5850
@@ -650,4 +650,30 @@ F 3 "" H 3700 2950 50  0001 C CNN
 	1    3700 2950
 	-1   0    0    -1  
 $EndComp
+$Comp
+L Switch:SW_SPST SW1
+U 1 1 6381C2AE
+P 3600 5350
+F 0 "SW1" H 3600 5585 50  0000 C CNN
+F 1 "SW" H 3600 5494 50  0000 C CNN
+F 2 "cnc3018-PCB:right_angle_button" H 3600 5350 50  0001 C CNN
+F 3 "~" H 3600 5350 50  0001 C CNN
+	1    3600 5350
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR0105
+U 1 1 638214D0
+P 3400 5350
+F 0 "#PWR0105" H 3400 5100 50  0001 C CNN
+F 1 "GND" V 3400 5150 50  0000 C CNN
+F 2 "" H 3400 5350 50  0001 C CNN
+F 3 "" H 3400 5350 50  0001 C CNN
+	1    3400 5350
+	1    0    0    -1  
+$EndComp
+Text GLabel 3800 5350 2    50   Input ~ 0
+SW
+Text GLabel 5050 5000 3    50   Input ~ 0
+SW
 $EndSCHEMATC
