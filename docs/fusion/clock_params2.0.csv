@@ -1,0 +1,270 @@
+, -------------------------------------------------------
+, This is a comment line.  It starts with a comma
+, -------------------------------------------------------
+, WOOD has to become before DESIGN because of washer_space which is used
+, for the main gear offset construction planes
+
+_____________WOOD______________,,0
+
+ply_medium,			mm,		4.8 mm,
+ply_thin,			mm,		3.175 mm,
+ply_thick,			mm,		11.5 mm,
+
+_____________DESIGN____________,,0
+
+sec_wheel_deg,		deg,	6 deg,		turn per click
+sec_wheel_radius,	mm,		50 mm,		to base of teeth
+sec_wheel_tooth_h,	mm,		4 mm,		how tall are the teeth
+
+center_to_pendulum,	mm,		87 mm,		normalized group1
+pendulum_to_pawl,	mm,		27 mm,		normalized group1
+center_to_pawl,		mm,		center_to_pendulum - pendulum_to_pawl
+
+pendulum_min_travel,deg,	15 deg,		clock should run at this amount of movement
+pendulum_travel,	deg,	16 deg,		clock should not overrun at any of these
+pendulum_max_travel,deg,	17 deg,		put a physical stop here
+max_mag_travel,		deg,	18 deg,		the magnet can also act as a spring to speed it up
+
+pendulum_length,	mm,		280 mm,		pivot to center of ball
+magnet_offset,		mm,		57 mm,		from center of ball to center of magnet:
+ball_diam,			mm,		60 mm,		diam of ball at end of pendulum
+
+, chosen distance of 87.5 mm for design
+, gear1a=8xM1,  gear1b=64xM1, distance=87.5, ratio=8:1
+, 36M1=87.5, M1=2.4305
+, gear2a=8xM2,	gear2b=60xM2, distance=87.5, ratio=7.5:1
+, 34M2=87.5, M2=2.5735
+
+gear_distance,	  mm,		87.5 mm,	chosen
+
+gear1_modulus,		,		2.4305,		modulus of gear1a and gear1b
+gear1_ratio,		,		8,			gear ratio from seconds to minutes1
+gear1a_teeth,		,		8,			teeth on inner seconds gear
+gear1b_teeth,		,		64,			teeth on outer minutes1 gear
+
+gear2_modulus,		,		2.5735,		modulus of gear2a and gear2b
+gear2_ratio,		,		7.5,		gear ratio from minutes1 to minutes2
+gear2a_teeth,		,		8,			teeth on inner minutes1 gear
+gear2b_teeth,		,		60,			teeth on outer minutes2 gear
+
+, gear3a=12M1,  gear3b=48M1, distance=87.5, ratio=4:1
+, 30M1=87.5, M1=2.9167
+, gear4a=16M2, gear4b=48M2, distance=87.5, ratio=3:1
+, 32M2=87.5, M2=2.7344
+
+gear3_modulus,		,		2.9167,		modulus of gear3a and gear3b
+gear3_ratio,		,		4,			gear ratio from minutes2 to hours1
+gear3a_teeth,		,		12,			teeth on inner minutes2 gear
+gear3b_teeth,		,		48,			teeth on outer hours1 gear
+
+gear4_modulus,		,		2.7344,		modulus of gear4a and gear4b
+gear4_ratio,		,		3,			gear ratio from hours1 to hours2
+gear4a_teeth,		,		12,			teeth on inner hours1 gear
+gear4b_teeth,		,		48,			teeth on outer hours2 gear
+
+_____________PLANES____________,,0
+
+outer_back,			mm,		0 mm
+inner_back,			mm,		outer_back - ply_medium
+back_inside,		mm,		inner_back - ply_medium,				arbitrary
+pendulum_plane,		mm,		back_inside - ply_medium - ply_thin,
+middle_back,		mm,		pendulum_plane - ply_medium - ply_medium,
+middle_front,		mm,		middle_back - ply_medium
+arm_back,			mm,		middle_front - ply_thin
+arm_front,			mm,		arm_back - ply_medium
+seconds_wheel,		mm,		arm_front - 0.5 mm
+
+gear1a,				mm,		seconds_wheel - ply_medium - ply_thin
+gear1b,				mm,		gear1a - 0.5 * ply_medium
+gear2a, 			mm,		gear1b - 1.0 * ply_medium - ply_thin
+gear2b,				mm,		gear2a - 0.5 * ply_medium
+gear3a,				mm,		gear2b - 1.0 * ply_medium - ply_thin
+gear3b,				mm,		gear3a - 0.5 * ply_medium
+gear4a,				mm,		gear3b - 1.0 * ply_medium - ply_thin
+gear4b,				mm,		gear4a - 0.5 * ply_medium
+front_inside,		mm,		gear4b - 3 * ply_medium - ply_thin
+
+front_outside,		mm,		front_inside - ply_medium
+hours_hand,			mm,		front_outside - ply_thin - 3 mm
+minutes_hand,		mm,		hours_hand - ply_thin - 4 mm
+seconds_hand,		mm,		minutes_hand - ply_thin - 5 mm
+mag_holder_front,	mm,		pendulum_plane - 2 * ply_medium - ply_thin
+bottom_inside,		mm,		-270 mm
+top_outside,		mm,		bottom_inside + 45 mm
+left_outside,		mm,		-100 mm
+right_outside,		mm,		100 mm
+
+____________CHOICES_____________,,0
+
+gear_slop,			mm,		0.0 mm,		extra distance between gear centers for meshing
+
+face_inner_diam,	mm,		153 mm,
+face_outer_diam,	mm,		210 mm,
+
+
+coil_length,		mm,		5 mm,	    windable length of coil
+coil_id,			mm,		6 mm,		id must include hole
+coil_hole,			mm,		3.2 mm,		hole for winding screw
+coil_od,			mm,		24 mm,	    19 mm should allow 500 turns 30ga == 19.6m == 6.6 ohms
+coil_slop,			mm,		1 mm,		extra diameter for coil hole
+
+,hall_wood_high,	mm,		4.2,		laser cut height of hole for hall sensor
+,hall_wood_wide,	mm,		1.7,		laser cut
+hall_high,			mm,		4.4,		in plastic
+hall_wide,			mm,		2.0,		in plastic
+
+_____________RODS____________,,0
+
+,rod25,				mm,		2.35 mm,	bundle of rods
+,rod25_tight,		mm,		2.2 mm,		laser cut - tight fit
+,rod25_loose,		mm,		2.4 mm,		laser cut - loose fit
+,rod3,				mm,		2.96 mm,	have 2 x 4in, 3in + 1 peg
+rod3_tight,			mm,		2.8 mm,		laser cut - tight fit
+rod3_loose,			mm,		3.0 mm,		laser cut - loose fit
+,rod5,				mm,		4.95 mm,	have 1 x 5in + 20 pegs
+,rod5_tight,		mm,		4.8 mm,		laser cut - tight fit
+,rod5_loose,		mm,		5.0 mm,		laser cut - loose fit
+,rod6,				mm,		5.95 mm,	have 3 x 4in
+,rod6_tight,		mm,		5.8 mm,		laser cut - tight fit
+,rod6_loose,		mm,		6.1 mm,		laser cut - loose fit
+
+thr_rod5_tight,		mm,		4.6 mm,		tight fit when laser cut
+thr_rod5_loose,		mm,		5.0 mm,		loose when laser cut
+
+,dowl11,			mm,		10.8,		teak dowl, general tight fit in laer cut
+dowl_half_inch,		mm,		12.8,		poplar dowl, general tight fit in laer cut
+
+_____________TUBES____________,,0
+
+, washers are a little tighter than bearings since they are typically thinner
+, tubes come in the stainless steel varieties 59, 66, and 77 and brass 4,5, and 6
+
+
+tube_thickness,		mm,		0.3 mm,
+
+,BRASS TUBES
+
+,tube4,				mm,		4.0 mm,		brass
+tube4_tight,		mm,		3.81 mm,	tight fit when laser cut
+,tube4_bearing,		mm,		4.0 mm,		smooth bearing when laser cut
+tube4_wash,			mm,		4.1 mm,		washer when laser cut
+
+,tube5,				mm,		5.0 mm,		brass - fits 5mm id bearings
+tube5_tight,		mm,		4.85 mm,	tight fit when laser cut
+,tube5_bearing,		mm,		5.0 mm,		smooth bearing when laser cut
+tube5_wash,			mm,		5.1 mm,		washer when laser cut
+
+,tube6,				mm,		6.0 mm,		brass - fits 6mm id bearings
+tube6_tight,		mm,		5.85 mm,	tight fit when laser cut
+,tube6_bearing,		mm,		5.9 mm,		smooth bearing when laser cut
+tube6_wash,			mm,		6.0 mm,		washer when laser cut
+
+,SS TUBES
+
+,tube59,			mm,		5.87 mm,	knit9 - fits bearing_big and bearing_small, accepts thr_rod_5
+,tube59_tight,		mm,		5.7 mm,		tight fit when laser cut
+,tube59_bearing,	mm,		6.0 mm,		smooth bearing when laser cut
+,tube59_wash,		mm,		6.0 mm,		washer when laser cut
+
+,tube69,			mm,		6.82 mm,	knit10
+,tube69_tight,		mm,		6.7 mm,		tight fit when laser cut
+,tube69_bearing,	mm,		7.1 mm,		smooth bearing when laser cut
+,tube69_wash,		mm,		7.1 mm,		washer when laser cut
+
+,tube77,			mm,		7.68 mm,	knit11 - fits 608 bearings
+,tube77_tight,		mm,		7.6 mm,		tight fit when laser cut
+,tube77_bearing,	mm,		8.0 mm,		smooth bearing when laser cut
+,tube77_wash,		mm,		7.8 mm,		washer when laser cut
+
+_____________BEARINGS____________,,0
+
+,my naming convention is INNER,OUTER,THICK
+
+,bearing394 - they call this MR93ZZ or MR93 2Z (two steel variant)
+,tiny_bearing_id,	mm,		3 mm,		accepts rod3, M3 screws
+,tiny_bearing_od,	mm,		9 mm,		8.9 actual
+,tiny_bearing_thick,mm,		4 mm,
+,tiny_bearing_wash, mm,		7 mm,		size of washer that will fit inside bearing
+,tiny_bearing_laser,mm,		9 mm,		UNTESTED - tight fit when laser cut
+,tiny_bearing_mach,	mm,		9 mm,		UNTESTED - tight fit when machined with 1.9mm end mill
+
+,bearing 5165 - they call this 625ZZ (two steel variant)
+,normal_bearing_id,	mm,		5 mm,		accepts tube5, rod5, and M5 thr_rod5 loosely
+,normal_bearing_od,	mm,		16 mm,		15.97 actual
+normal_bearing_thick,mm,	5 mm,
+normal_bearing_wash, mm,	11.5 mm,		size of washer that will fit inside bearing
+normal_bearing_laser,mm,	16 mm,		UNTESTED - tight fit when laser cut
+,normal_bearing_mach,mm,	16 mm,		UNTESTED - tight fit when machined with 1.9mm end mill
+
+,bearing 6135 - they call this 686ZZ (two steel variant)
+,small_bearing_id,	mm,		6 mm,		accepts tube6, rod6, and tube59
+,small_bearing_od,	mm,		13 mm,
+small_bearing_thick,mm,		5 mm,
+small_bearing_wash, mm,		10 mm,		size of washer that will fit inside bearing
+small_bearing_laser,mm,		13 mm,		UNTESTED - tight fit when laser cut
+,small_bearing_mach,mm,		13 mm,		UNTESTED - tight fit when machined with 1.9mm end mill
+
+,bearing 6155 - they call this 696ZZ (two steel variant)
+,big_bearing_id,	mm,		6 mm,		accepts tube6, rod6, and tube59
+,big_bearing_od,	mm,		15 mm,
+big_bearing_thick,	mm,		5 mm,
+big_bearing_wash, 	mm,		11 mm,		size of washer that will fit inside bearing
+big_bearing_laser,	mm,		15.0 mm,	increased from 14.9 in v1.1 - tight fit when laser cut
+,big_bearing_mach,	mm,		15 mm,		UNTESTED - tight fit when machined with 1.9mm end mill
+
+,bearing8228 - they call this a 608, where i have the -2RS (two rubber seals) and -ZZ (two steel seals) variants
+,bearing8_id,		mm,		8 mm,		accepts tube77, rod8, M8 bolts
+,bearing8_od,		mm,		22 mm,		lasert cut tight
+,bearing8_thick,	mm,		7 mm,
+,bearing8_wash,		mm,		18,			size of washer that will fit inside bearing
+,bearing8_laser,	mm,		21.8 mm,	UNTESTED - tight fit when laser cut
+,bearing8_mach,		mm,		22 mm,		UNTESTED - tight fit when machined with 1.9mm end mill
+
+
+_____________SCREWS_AND_WASHERS___________,,0
+
+screw3_tight_wood,	mm,		2.6 mm,		tight fit when laser cut
+screw3_tight_plastic,mm,	2.7 mm,		tight enough in plastic
+screw3_loose,		mm,		3.0 mm,		loose fit when laser cut
+
+,washer25_id,		mm,		2.5 mm
+,washer25_od,		mm,		4 mm
+,washer25_thick,		mm,		0.66 mm
+washer3_id,			mm,		3 mm
+washer3_od,			mm,		6.8 mm
+washer3_thick,		mm,     0.5 mm
+washer4_id,			mm,		4 mm,
+washer4_od,			mm,		8 mm,
+washer4_thick,		mm,		0.75
+washer5_od,			mm,		10 mm
+washer5_id,			mm,		5.2 mm
+washer5_thick,		mm,		1 mm
+,nut5_diam,			mm,		8 mm,		7.87 actual
+,nut5_thick,		mm,		4 mm,		3.81 actual
+,nut6_diam,			mm,		10 mm,		9.85 actual
+,nut6_thick,		mm,		5 mm,		4.86 actual
+
+,thrust_plate_thick,mm,		1.3 mm,		the bearing plate from 8mm thrust bearings
+,thrust_plate_od,	mm,		16 mm,
+,thrust_plate_id,	mm,		8.2 mm
+
+___________LENGTHS_____________,,0
+,positions, offsets are negative
+
+dowl_short,			mm,		middle_back - inner_back,								-27.175
+dowl_medium,		mm,		-(front_outside - middle_front),						72.35
+dowl_long,			mm,		-(front_outside - inner_back),							99.525
+
+top_tube_start,		mm,		outer_back + ply_thin + 3 mm,							to right start of top tube includes thin washer and medium stopper, and some slop
+top_tube_len,    	mm,		(arm_front - 2 mm) - top_tube_start, 					-48.125, to left includes some slop past the arm
+
+secs_tube_len, 		mm,		(seconds_hand - ply_thin - 1 mm) - middle_back,			-98.65
+
+mins_tube_start,	mm, 	gear1a - 2 * ply_medium - washer4_thick,				-58.775
+mins_tube_len,		mm,		(minutes_hand - ply_thin - 1 mm) - mins_tube_start,		-60.075, includes 1mm of slop in front of hand
+hours_tube_start,	mm, 	gear3a - 2 * ply_medium - washer5_thick
+hours_tube_len,		mm,		(hours_hand - ply_thin - 1 mm) - hours_tube_start,		-33.90,	includes 1mm of slop in front of hand
+bottom_tube_len,	mm,		front_outside-middle_back,								-77.15
+
+idler_tube_start,	mm,		(middle_front - 0.4mm),									tube presses up against bearing, which is fatter than the wood, and pressed forward
+idler_tube_len,		mm,		(gear3b + washer5_thick) - idler_tube_start,			-38.20

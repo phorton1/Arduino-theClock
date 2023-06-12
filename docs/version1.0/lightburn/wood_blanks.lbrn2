@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightBurnProject AppVersion="1.2.01" FormatVersion="1" MaterialHeight="0" MirrorX="False" MirrorY="False">
+    <Thumbnail Source="iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAESUlEQVR4nO3Yv4rcVQCG4bPJbCSaZZGYwiAiCqKtYOMtCDbWlqlyA1oFwfuwsdAyjSBYioggFioqC0FIZDXBxHU2bHZnd37W4p9uZoT3eW7gO815OZytaZqmASSd2/QBgM0RAAgTAAgTAAgTAAgTAAgTAAgTAAgTAAgTAAgTAAgTAAibnT46HEd3b43tncubPgvkHR/8Onafe2Vte7P9Lz4c375/fVzYubK2UeAfTNN4dLA/Xv9gubbJ2aWrL4/d518dr934bG2jwN8tF8fjk2u7a930BwBhs/ntb8b8znfjh4/e2fRZIG06OxvT8nQtd/Hgp6/Hi2++O2aLhw/G8uRobF9c79MD+Kvp7HSMsbWWu3j48/djMb83ZttPPDnObT82Xnjj7ZWPAv9uuTgeezffW8td/OWrm+PCzlP+AKBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBMACBs9mDv83F69Mf4+K3zmz4LtE1jTGM5Pr3+9MqnTua/jcP9H8fWYn5vur/35bh4+ZmVjwL/7eTw/rh09aWV7ywe/j4ev/Ls2JqmaVr5GvC/5A8AwgQAwgQAwgQAwgQAwgQAwgQAwgQAwgQAwgQAwgQAwgQAwv4Ez3Rsm0XP+AAAAAAASUVORK5CYII="/>
+    <VariableText>
+        <Start Value="0"/>
+        <End Value="999"/>
+        <Current Value="0"/>
+        <Increment Value="1"/>
+        <AutoAdvance Value="0"/>
+    </VariableText>
+    <UIPrefs>
+        <Optimize_ByLayer Value="0"/>
+        <Optimize_ByGroup Value="1"/>
+        <Optimize_ByPriority Value="-1"/>
+        <Optimize_WhichDirection Value="1"/>
+        <Optimize_InnerToOuter Value="1"/>
+        <Optimize_ByDirection Value="1"/>
+        <Optimize_ReduceTravel Value="1"/>
+        <Optimize_HideBacklash Value="0"/>
+        <Optimize_ReduceDirChanges Value="0"/>
+        <Optimize_ChooseCorners Value="0"/>
+        <Optimize_AllowReverse Value="1"/>
+        <Optimize_RemoveOverlaps Value="0"/>
+        <Optimize_OptimalEntryPoint Value="1"/>
+    </UIPrefs>
+    <CutSetting type="Cut">
+        <index Value="26"/>
+        <name Value="wood"/>
+        <minPower Value="0.4"/>
+        <maxPower Value="0.4"/>
+        <maxPower2 Value="20"/>
+        <speed Value="25"/>
+        <priority Value="0"/>
+        <tabCount Value="1"/>
+        <tabCountMax Value="1"/>
+    </CutSetting>
+    <Shape Type="Rect" CutIndex="26" W="340" H="300" Cr="0">
+        <XForm>1 0 0 1 170 150</XForm>
+    </Shape>
+    <Shape Type="Rect" CutIndex="26" W="304.79999" H="304.79999" Cr="0">
+        <XForm>1 0 0 1 152.4 152.4</XForm>
+    </Shape>
+    <Notes ShowOnLoad="0" Notes=""/>
+</LightBurnProject>

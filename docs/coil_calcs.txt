@@ -1,0 +1,64 @@
+-------------------------------------------
+NEW (Single Version 2 and 1.1+ Circular Coil)
+-------------------------------------------
+December 11, 2022
+
+I think it is:
+	500 turns of 30ga 
+	coil length = 5mm
+	bobbin diam = 6mm
+	calculated: 
+		coil diam: 19.005
+		wire length: 19.639m  (64.42 feet)
+		resistance: 6.631 ohma
+		volts at 1/2amp: 3.316V
+		power at 1/2amp: 1.658W
+
+If it was 600 turns
+	coil diam: 21.606
+	wire length: 26.018 meters  (85.36 feet)
+	resistance: 8.785 ohms
+	volts at 1/2 amp: 4.393V
+	power at 1/2 amp: 2.196W
+
+If it was 400 turns
+	coil diam: 16.404
+	wire length: 14.077 meters (46.18 ft)
+	resistance: 4.753 ohms
+	volts at 1/2 amp: 2.377V
+	power at 1/2 amp: 1.118W
+
+
+BUT MY COILS ARE at least 24mm IN DIAM!!
+	- calculator doesnt include enamel insulation !?!
+	- still, could even be 600 turns
+	- could be loose winding
+	- sheesh
+
+AND A BIT FATTER:
+	- around 5.8 to 6 mm in actual length
+
+And the artifact 3D printed tools and coils don't match the sketches
+	- the bobbin inner diam matches 6mm pretty much
+	- but the outer diameter of the bobbin is 28 in the sketch, 
+		and 27.6 in the slicer ... 
+		and typically 28.75 on the coils I have
+	- and the inner diameter of the tool is AT LEAST 28.5mm
+		which makes no sense from 3d printing (unless I scraped it?!?)
+ 
+
+
+------------------------------------------------
+
+OLD Version 1 Oval Coils
+
+360 turns 30ga per coil
+4.8mm depth
+around 5.0mm circle in center
+14.754mm diam of round coil
+11.17m of wire
+3.772 ohms 
+1.866V at 1/2A
+so wire is about 10mm 'thick' around circular bobbin
+actual number of turns 330
+
