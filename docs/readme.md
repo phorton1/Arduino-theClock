@@ -357,7 +357,7 @@ magnets near the extreme of the swing that repulse the magnet in the pendulum?
 Then wouldn't it be the case that on wide swings the pendulum would **bounce**
 off those springs, making it go faster?   And then couldn't I reduce the
 amplitude of the pendulum (by putting less energy into it) so that it would
-not bounce of the springs, and would then tick slower as a result of that?
+not bounce off the springs, and would then tick slower as a result of that?
 
 So I retrofitted the clock with these **magnetic spring** thingees,
 switched to a single coil, rewrote most of the software, and within
