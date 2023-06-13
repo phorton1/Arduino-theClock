@@ -6,7 +6,10 @@ for a more functional, and better documented electromagnetic wooden clock for **
 
 [![TheClock2_Ticking_thumbnail.jpg](images/TheClock2_Ticking_thumbnail.jpg)](https://youtu.be/ZDjejpzawuY)
 
-This project is being documented *posthumously* in order to preserve the lineage of my clock oriented projects.
+This project is being documented *posthumously* in order to preserve the lineage of my clock oriented projects
+so it **does contain all the fusion360 files, DXF files, and other results of the project** in case you are
+interested.
+
 
 ## When and Why?
 
@@ -101,7 +104,7 @@ repair and/or rebuild the clock in case the gears or parts of the wooden mechani
 
 Given a general idea of the requirements of the project, I then proceeded into a **research
 phase** to learn as much as possible about these kinds of clocks before constructing one.
-I downloaded and analyzed virtually any clock design that I could, even if they did not
+I downloaded and analyzed virtually any clock design that I could find, even if they did not
 match my construction criteria, just to get an idea of how other people had approached
 building wooden (or any) clocks.  This included a number of complete **Fusion 360** designs,
 but also a number of available (free) online **books** about the subject.
@@ -298,7 +301,7 @@ design gate, as it were.
 
 I also made a **coil winding machine**, as hand winding
 these coils is really tedious and inexact, and I had to
-make ten of them!!
+make eight of them!!
 
 ![coil_winding_machine.jpg](images/coil_winding_machine.jpg)
 
@@ -370,16 +373,16 @@ mucking around with the code.
 
 It was not pretty.  There is a PID controller
 that adjusted the energy put into each swing based on the
-milliseconds error, but I also need to add a few "heuristics" (**kludges**)
+milliseconds error, but I also needed to add a few "heuristics" (**kludges**)
 to keep the clock running reasonably ... to prevent it
 from "stalling" while trying to slow down, or banging back and
 forth while trying to speed up.
 
 After a week of effort, Version 1.1 was probably accurate to a few minutes a day.
 
-Since I wanted to make a clock as a gift to someone for Christmas,
-I did one more quick design pass to rectify the worst problems with Clock1
-and pressed on with another build:
+Since I wanted to make a clock as a gift to someone for Christmas, and I was
+running out of time, I did one more quick design pass to rectify the worst
+problems with Clock1 and pressed on with another build:
 
 - the wooden frame was not square and the clock did not sit flat,
   so I designed a 3D printed base which at least kept the clock
@@ -395,12 +398,16 @@ made the new circuit board, soldered it up, wound coils, sanded all the gears (p
 painted everything, and so on, put it together, and, after putting
 it through a quick testing cycle, I sent it away.
 
+
+[![theClock2_BuildMontage_thumbnail.jpg](images/theClock2_BuildMontage_thumbnail.jpg)](https://youtu.be/pdHKCl591JE)
+
+
 I would say that it was accurate to a few minutes a day at it's best.
 
 I did not even get a chance to test it for a week before gifting it :-(
 
 Nor had I, in the code, gotten around to any notion of utilizing
-the ESP32's RTC (real time clock), much less to using NTP (Network
+the ESP32's RTC (real time clock), much less using NTP (Network
 Time Protocol) to make the clock accurate over any time scales
 (though I had laid the groundwork in the code, WebUI, etc)
 
@@ -413,7 +420,7 @@ I called this "theClock - Version 2"
 
 Part of it was the mechanics .. it was missing beats or sometimes
 grabbing two gears.  There were friction problems, and, I think,
-misalignment causing the gears to bind at time. But also
+misalignment causing the gears to bind at times. But also
 part of it was the software and heuristics, which
 were hamstrung with the *information* available to the software in
 order to control the pendulum, and somewhat hastily written
@@ -447,8 +454,11 @@ From these initial clocks I came up with the following list of **problems**:
   and as a result, the swing would vary wildly while trying to speed up or slow down the clock,
   sometimes banging the left and right limits of travel (and grabbing two teeth!) or other times
   failing to even grab a tooth and move the seconds hand (stalling).
+- Due to time constraints I had not been able to implement any code that took advantage
+  of the ESP32 **RTC** (Real Time Clock) or the available **NTP** (Network Time Protocol) to
+  make the clock more accurate.
 
-Although I compensated for the last problem by putting heuristics into the code for these cases,
+Although I compensated for the resolution problem by putting heuristics into the code for these cases,
 in subsequent clocks I utilized a different, more accurate way of sensing the position of the pendulum
 which led to a much simpler algorithm, and smoother and more precise control of the
 pendulum, in turn resulting in a much more pleasing and consistent swing.
@@ -461,7 +471,6 @@ for my old forlorn clock version 1 sitting there on the shelf, so I retrofitted 
 the **AS5600 angle sensor** and **software** from *theClock3* resulting in it *keeping
 much better time* and having a *much nicer swing* (even though it is not as accurate,
 or trouble free as *theClock3*) ..
-
 
 
 ### **Next:** After versions 1 & 2, I designed and implemented [**theClock3**](https://github.com/phorton1/Arduino-theClock3)
