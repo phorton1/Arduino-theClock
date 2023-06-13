@@ -1,7 +1,7 @@
 # theClock - my first attempts at making a electromagnetic wooden geared clock
 
 
-THIS PROJECT IS OBSOLETE.  Please see [**theClock3**](https://github.com/phorton1/Arduino-theClock3)
+Please see [**theClock3**](https://github.com/phorton1/Arduino-theClock3)
 for a more functional, and better documented electromagnetic wooden clock for **makers**.
 
 [![TheClock2_Ticking_thumbnail.jpg](images/TheClock2_Ticking_thumbnail.jpg)](https://youtu.be/ZDjejpzawuY)
