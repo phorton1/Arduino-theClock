@@ -299,7 +299,7 @@ gears, gear ratios, the ratchet mechanism, and so on, all of which worked
 **pretty good**, more or less, on the fist build, right out of the
 design gate, as it were.
 
-I also made a **coil winding machine**, as hand winding
+I also made a [**coil winding machine**](https://github.com/phorton1/Arduino-CoilWindingMachine), as hand winding
 these coils is really tedious and inexact, and I had to
 make eight of them!!
 
