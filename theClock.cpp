@@ -749,7 +749,7 @@ void theClock::loop()	// override
 				dur > 2000 ? 2 : 1;			// medium, short press
 			int fxn =
 				press == 3 ? FUNCTION_RESET :
-				press == 2 ? getBool(ID_DEVICE_WIFI) ?
+				press == 2 ? getBool(ID_WIFI) ?
 					FUNCTION_WIFI_OFF :
 					FUNCTION_WIFI_ON :
 				getBool(ID_RUNNING) ?
@@ -828,9 +828,9 @@ void theClock::loop()	// override
 			if (fxn == FUNCTION_RESET)
 				the_clock->factoryReset();
 			else if (fxn == FUNCTION_WIFI_OFF)
-				the_clock->setBool(ID_DEVICE_WIFI,0);
+				the_clock->setBool(ID_WIFI,0);
 			else if (fxn == FUNCTION_WIFI_ON)
-				the_clock->setBool(ID_DEVICE_WIFI,1);
+				the_clock->setBool(ID_WIFI,1);
 			else if (fxn == FUNCTION_STARTING)
 				the_clock->setBool(ID_RUNNING,1);
 			else if (fxn == FUNCTION_STOPPING && clock_started)
