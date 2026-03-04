@@ -118,9 +118,7 @@ static int max_power_used   = 0;
 #define FUNCTION_STOPPED		1	// white		state
 #define FUNCTION_STOPPING		2	// white		short press
 #define FUNCTION_STARTING       3	// green		short press
-#define FUNCTION_WIFI_ON        4	// blue			long press (over 2 seconds)
-#define FUNCTION_WIFI_OFF       5	// magenta		long press (over 2 seconds)
-#define FUNCTION_RESET			6	// red			super long press (over 8 seconds)
+#define FUNCTION_RESET			4	// red			super long press (over 8 seconds)
 
 static int flash_fxn = FUNCTION_NONE;
 static bool flash_on = 0;
@@ -749,9 +747,6 @@ void theClock::loop()	// override
 				dur > 2000 ? 2 : 1;			// medium, short press
 			int fxn =
 				press == 3 ? FUNCTION_RESET :
-				press == 2 ? getBool(ID_WIFI) ?
-					FUNCTION_WIFI_OFF :
-					FUNCTION_WIFI_ON :
 				getBool(ID_RUNNING) ?
 					FUNCTION_STOPPING :
 					FUNCTION_STARTING;
@@ -772,8 +767,6 @@ void theClock::loop()	// override
 				last_press = press;
 				setPixel(PIXEL_MAIN,
 					fxn == FUNCTION_RESET ? MY_LED_RED :
-					fxn == FUNCTION_WIFI_OFF ? MY_LED_MAGENTA :
-					fxn == FUNCTION_WIFI_ON ? MY_LED_BLUE :
 					fxn == FUNCTION_STARTING ? MY_LED_GREEN :
 					MY_LED_WHITE);
 				pixels.show();
@@ -810,8 +803,6 @@ void theClock::loop()	// override
 			flash_dur = 100;
 			color =
 				flash_fxn == FUNCTION_STARTING ? MY_LED_GREEN :
-				flash_fxn == FUNCTION_WIFI_ON ? MY_LED_BLUE :
-				flash_fxn == FUNCTION_WIFI_OFF ? MY_LED_MAGENTA :
 				flash_fxn == FUNCTION_RESET ? MY_LED_RED :
 				MY_LED_WHITE;	// STOPPED or STOPPING
 				MY_LED_YELLOW;	// unknown function
@@ -827,10 +818,6 @@ void theClock::loop()	// override
 
 			if (fxn == FUNCTION_RESET)
 				the_clock->factoryReset();
-			else if (fxn == FUNCTION_WIFI_OFF)
-				the_clock->setBool(ID_WIFI,0);
-			else if (fxn == FUNCTION_WIFI_ON)
-				the_clock->setBool(ID_WIFI,1);
 			else if (fxn == FUNCTION_STARTING)
 				the_clock->setBool(ID_RUNNING,1);
 			else if (fxn == FUNCTION_STOPPING && clock_started)
